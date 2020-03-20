@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Map View{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div style="height: 800px; width: 800px;">
+                    {{ script|safe }}
+                </div>
+            </div>
+        </nav>
+    </div>
+</section>
+{% endblock %}
