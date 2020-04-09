@@ -1,7 +1,16 @@
 from threading import Thread
 
-from flask import Flask, render_template, url_for
+import os
+from io import BytesIO
+from PIL import Image
+
+from flask import Flask, render_template, url_for, request, redirect, Response, send_from_directory, send_file
 from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
+from flask_restful import Api, Resource, reqparse
+
+from flask_images import Images
+from flask_images import resized_img_src, resized_img_tag
 
 from tornado.ioloop import IOLoop
 
@@ -10,56 +19,133 @@ from bokeh.plotting import figure
 from bokeh.server.server import Server
 from bokeh.embed import server_document
 
-from map import bokeh_map
+from map import make_bokeh_map, load_flight_lines
+from flight_plots import make_cbd_plot
 
+from film_segment import db, FilmSegment
+
+import config
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///explore.db'
-db = SQLAlchemy(app)
+app.config.from_object(config.Config)
+db.init_app(app)
+
+ma = Marshmallow(app)
+api = Api(app)
+images = Images(app)
 
 
-class FilmSegment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class FilmSegmentSchema(ma.Schema):
+    class Meta:
+        fields = ("id", "path", "reel", "first_frame", "last_frame", "first_cbd", "last_cbd", "flight",
+                  "is_junk", "is_verified", "needs_review", "scope_type", "instrument_type")
 
-    path = db.Column(db.String(300), unique=True)
-    reel = db.Column(db.Integer)
-    first_frame = db.Column(db.Integer)
-    last_frame = db.Column(db.Integer)
 
-    first_cbd = db.Column(db.Integer)
-    last_cbd = db.Column(db.Integer)
-    flight = db.Column(db.Integer)
+segment_schema = FilmSegmentSchema()
 
-    is_junk = db.Column(db.Boolean)
-    is_verified = db.Column(db.Boolean)
 
-    def __repr__(self):
-        return f'<FilmSegment {self.id}: Reel {self.reel} frames {self.first_frame} to {self.last_frame} [{self.path}]>'
+class FilmSegmentResource(Resource):
+    def get(self, id):
+        seg = FilmSegment.query.get_or_404(id)
+        return segment_schema.dump(seg)
+
+    def post(self, id):
+        seg = FilmSegment.query.get_or_404(id)
+
+        if not request.is_json: # only accept json formatted update requests
+            return None, 400
+
+        print("Scope type: ", request.json['scope_type'])
+        print("Instrument type: ", request.json['instrument_type'])
+
+        if 'flight' in request.json:
+            seg.flight = request.json['flight']
+        if 'first_cbd' in request.json:
+            seg.first_cbd = request.json['first_cbd']
+        if 'last_cbd' in request.json:
+            seg.last_cbd = request.json['last_cbd']
+        if 'scope_type' in request.json:
+            seg.scope_type = request.json['scope_type']
+        if 'instrument_type' in request.json:
+            seg.instrument_type = request.json['instrument_type']
+
+        if 'is_junk' in request.json:
+            seg.is_junk = (request.json['is_junk'] == "junk")
+        if 'is_verified' in request.json:
+            seg.is_verified = (request.json['is_verified'] == "verified")
+        if 'needs_review' in request.json:
+            seg.needs_review = (request.json['needs_review'] == "review")
+
+        db.session.commit()
+
+        return segment_schema.dump(seg), 200
+
+
+api.add_resource(FilmSegmentResource, '/api/segments/<int:id>')
+
+
+## Resource pre-loading
+flight_lines = load_flight_lines('../original_positioning/')
 
 
 @app.route('/')
 @app.route('/map/')
 def map_page():
-    script = server_document('http://localhost:5006/map')
-    return render_template("map.html", script=script,
+    map = make_bokeh_map(500,500, flight_lines=flight_lines)
+    return render_template("map.html", map=map,
                            breadcrumbs=[('Explorer', '/'), ('Map', url_for('map_page'))])
 
 
 @app.route('/flight/<int:flight_id>/')
 def flight_page(flight_id):
-    return render_template("flight.html", flight=flight_id,
+    map = make_bokeh_map(300, 300, flight_id=flight_id, title="Flight Map", flight_lines=flight_lines)
+    cbd_plot = make_cbd_plot(db.session, flight_id, 500, 300)
+    return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd_plot,
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('flight_page', flight_id=flight_id))])
 
 
+@app.route('/update_form/<int:id>/')
+def update_page(id):
+    seg = FilmSegment.query.get(id)
+    print(seg.is_verified)
+    return render_template("update.html", segment=seg, breadcrumbs=[('Explorer', '/')])
 
-def bk_worker():
-    # Can't pass num_procs > 1 in this configuration. If you need to run multiple
-    # processes, see e.g. flask_gunicorn_embed.py
-    server = Server({'/map': bokeh_map}, io_loop=IOLoop(), allow_websocket_origin=["*"]) # localhost:8000
-    server.start()
-    server.io_loop.start()
+def serve_pil_image(pil_img):
+    img_io = BytesIO()
+    pil_img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/jpeg')
+
+@app.route('/api/radargram/jpg/<int:id>')
+@app.route('/api/radargram/jpg/<int:id>/h/<int:max_height>')
+def radargram_jpg(id, max_height = None):
+    base_path = "/data3/schroeder/jemmons/35mm_output.2018-01-12"
+
+    seg = FilmSegment.query.get(id)
+    pre, ext = os.path.splitext(seg.path)
+    filename = pre + ".jpg"
+
+    if max_height:
+        im = Image.open(os.path.join(base_path, filename))
+        if max_height >= im.height:
+            return send_from_directory(base_path,
+                                       filename)
+        else:
+            scale = max_height / im.height
+            return serve_pil_image(im.resize((int(im.width*scale), int(im.height*scale))))
+    else:
+        return send_from_directory(base_path,
+                                    filename)
+
+
+# def bk_worker():
+#     # Can't pass num_procs > 1 in this configuration. If you need to run multiple
+#     # processes, see e.g. flask_gunicorn_embed.py
+#     server = Server({'/map': bokeh_map}, io_loop=IOLoop(), allow_websocket_origin=["*"]) # localhost:8000
+#     server.start()
+#     server.io_loop.start()
 
 
 if __name__ == '__main__':
-    Thread(target=bk_worker).start()
-    app.run(debug=True)
+    #Thread(target=bk_worker).start()
+    app.run(debug=True, port=7879)

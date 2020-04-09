@@ -4,15 +4,21 @@
 
 {% block content %}
 <section class="section">
-    <div class="container">
-        <h4>Flight #{{ flight }}</h4>
+    <div class="container" id="flight-header">
+        <!--<h2>Flight #{{ flight }}</h2>-->
+    </div>
+    <div class="container" id="flight-plots">
         <nav class="level">
             <div class="level-item has-text-centered">
-                <div style="height: 800px;">
-                    Testing...
-                </div>
+                {{ map|safe }}
+            </div>
+            <div class="level-item has-text-centered">
+                {{ cbd_plot|safe }}
             </div>
         </nav>
+    </div>
+    <div class="container" id="flight-update">
+        {%  include "update.html" %}
     </div>
 </section>
 {% endblock %}

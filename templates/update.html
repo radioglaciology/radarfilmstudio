@@ -1,0 +1,219 @@
+<div class="container">
+    <div id="flight-radargram"></div>
+    <div style="text-align: right;">
+        <div class="tooltip">
+            <i class="fas fa-info-circle"></i>
+            <span class="tooltiptext-left" style="width: 400px;">
+                This is a preview of the A scope or Z scope. <br>
+                You can scroll to zoom and drag to pan. <br>
+                Initially, a low resolution image is loaded. Quality will improve as the high resolution copy is loaded. <br>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="flight-update-form">
+    <form id="update">
+        <nav class="level">
+            <input type="hidden" value="-1" id="update_segment_id">
+            <div class="level-item">
+                <fieldset disabled>
+                    <div class="field">
+                        <label class="label">Path</label>
+                        <div class="control">
+                            <input class="input" id="update_segment_path" name="path" type="text" readonly value="">
+                            <div class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltiptext">Relative path to raw data file on our server</span>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="level-item">
+                <fieldset disabled>
+                    <div class="field">
+                        <label class="label">First Frame</label>
+                        <div class="control">
+                            <input class="input" id="update_segment_first_frame" name="first_frame" type="text" readonly value="">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="level-item">
+                <fieldset disabled>
+                    <div class="field">
+                        <label class="label">Last Frame</label>
+                        <div class="control">
+                            <input class="input" id="update_segment_last_frame" name="last_frame" type="text" readonly value="">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Scope Type</label>
+                    <div class="select">
+                        <select id="update_segment_scope_type" name="scope_type">
+                            <option value="a">A Scope</option>
+                            <option value="z">Z Scope</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Frequency</label>
+                    <div class="select">
+                        <select id="update_segment_instrument_type" name="instrument_type">
+                            <option value="0">Unknown</option>
+                            <option value="10">60 MHz</option>
+                            <option value="20">300 MHz</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <nav class="level">
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Flight</label>
+                    <div class="control">
+                        <input class="input" id="update_segment_flight" name="flight" type="text" value="">
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">First CBD</label>
+                    <div class="control">
+                        <input class="input" id="update_segment_first_cbd" name="first_cbd" type="text" value="">
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Last CBD</label>
+                    <div class="control">
+                        <input class="input" id="update_segment_last_cbd" name="last_cbd" type="text" value="">
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Junk</label>
+                    <div class="control">
+                        <input name="is_junk" type="hidden" value="">
+                        <input class="checkbox" id="update_segment_is_junk" name="is_junk" type="checkbox" value="junk" >
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Verified</label>
+                    <div class="control">
+                        <input name="is_verified" type="hidden" value="">
+                        <input class="checkbox" id="update_segment_is_verified" name="is_verified" type="checkbox" value="verified" >
+                    </div>
+                </div>
+            </div>
+            <div class="level-item">
+                <div class="field">
+                    <label class="label">Needs Review</label>
+                    <div class="control">
+                        <input name="needs_review" type="hidden" value="">
+                        <input class="checkbox" id="update_segment_needs_review" name="needs_review" type="checkbox" value="review" >
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <nav class="level">
+            <div class="level-left"></div>
+            <div class="level-right">
+                <div class="level-item" id="update-loading" style="display: none;"><i class='fas fa-spinner fa-spin'></i></div>
+                <div class="level-item">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button id="submit-update" class="button is-link">Update</button>
+                        </div>
+                        <div class="control">
+                            <button id="reset-update" class="button is-link has-background-warning">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </form>
+</div>
+
+<script type='text/javascript'>
+    // wheelzoom($("#radargram"));
+
+    const container = document.querySelector('#flight-radargram');
+    const viewer = new ImageViewer(container, { /* options */ });
+
+    (function ($) {
+        $.fn.serializeFormJSON = function () {
+
+            var o = {};
+            var a = this.serializeArray();
+            $.each(a, function () {
+                if (o[this.name]) {
+                    if (!o[this.name].push) {
+                        o[this.name] = [o[this.name]];
+                    }
+                    o[this.name].push(this.value || '');
+                } else {
+                    o[this.name] = this.value || '';
+                }
+            });
+            return o;
+        };
+    })(jQuery);
+
+    $("#submit-update").click(function(event) {
+            event.preventDefault();
+            $("#update-loading").html("<i class='fas fa-spinner fa-spin'></i>");
+            $("#update-loading").fadeIn(100);
+
+            json = JSON.stringify($("#update").serializeFormJSON());
+
+            $.ajax({
+                type: "POST",
+                contentType: "application/json",
+                url: "/api/segments/"+$("#update_segment_id").val(),
+                data: json,
+                dataType: "json"
+            })
+            .done(function() {
+                $("#update-loading").html("<i class='fas fa-check'></i>")
+            })
+            .fail(function() {
+                $("#update-loading").html("<i class='fas fa-exclamation-triangle'></i>")
+            })
+            .always(function(){
+                $("#update-loading").fadeOut(2000);
+                setTimeout(function() {  $("#update-loading").html("") }, 2000);
+            });
+    });
+
+    function update_form_id(id) {
+        $.getJSON( "/api/segments/"+id, function( data ) {
+            $("#update_segment_id").val(-1);
+            $("#update_segment_first_cbd").val(data['first_cbd']);
+            $("#update_segment_last_cbd").val(data['last_cbd']);
+            $("#update_segment_first_frame").val(data['first_frame']);
+            $("#update_segment_last_frame").val(data['last_frame']);
+            $("#update_segment_flight").val(data['flight']);
+            $("#update_segment_path").val(data['path']);
+            $("#update_segment_scope_type").val(data['scope_type']);
+            $("#update_segment_instrument_type").val(data['instrument_type']);
+            $("#update_segment_is_junk").prop('checked', data['is_junk']);
+            $("#update_segment_is_verified").prop('checked', data['is_verified']);
+            $("#update_segment_needs_review").prop('checked', data['needs_review']);
+            $("#update_segment_id").val(data['id']);
+        });
+        viewer.load("/api/radargram/jpg/"+id+"/h/200", "/api/radargram/jpg/"+id);
+        //$("#radargram").attr("src","/api/radargram/jpg/"+id);
+    }
+</script>
