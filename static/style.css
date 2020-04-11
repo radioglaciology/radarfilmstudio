@@ -1,8 +1,16 @@
+.container {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+a.disabled { /* Disable links */
+  pointer-events: none;
+  cursor: default;
+}
+
 #flight-radargram {
     height: 250px;
     width: 100%;
-    margin-top: 1em;
-    margin-bottom: 1em;
 }
 
 /* CSS tooltips from: https://www.w3schools.com/css/css_tooltip.asp */
@@ -50,4 +58,32 @@
 
 .tooltip:hover .tooltiptext-left {
   visibility: visible;
+}
+
+/* Loading cover */
+
+.loader-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity .3s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.loader {
+    height: 80px;
+    width: 80px;
+}
+
+.loader-is-active {
+    opacity: 1;
+    z-index: 1;
 }
