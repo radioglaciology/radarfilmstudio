@@ -24,6 +24,8 @@ def login():
             user = User.query.filter_by(email=email).first()  # Validate Login Attempt
             if user and user.check_password(password=password):
                 login_user(user)
+                user.last_login = datetime.now()
+                db.session.commit()
                 next_page = request.args.get('next')
                 return redirect(next_page or url_for('main_bp.map_page'))
         flash('Invalid username/password combination')

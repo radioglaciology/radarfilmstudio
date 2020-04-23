@@ -1,6 +1,7 @@
 import os
 from io import BytesIO
 from PIL import Image
+from datetime import datetime
 
 from flask import Blueprint, request, send_file, send_from_directory
 from flask_restful import Api, Resource
@@ -21,51 +22,56 @@ seg_api = Api(api_bp)
 class FilmSegmentSchema(ma.Schema):
     class Meta:
         fields = ("id", "path", "reel", "first_frame", "last_frame", "first_cbd", "last_cbd", "flight",
-                  "is_junk", "is_verified", "needs_review", "scope_type", "instrument_type")
+                  "is_junk", "is_verified", "needs_review", "scope_type", "instrument_type", "notes",
+                  "updated_by", "last_changed")
 
 
 segment_schema = FilmSegmentSchema()
 
 
+def add_next_previous(seg_dict, seg):
+    # Add next/prev by frame order
+    prev_frame = min(seg_dict['first_frame'], seg_dict['last_frame']) - 1
+    next_frame = max(seg_dict['first_frame'], seg_dict['last_frame']) + 1
+
+    next_by_frame = FilmSegment.query.filter(
+        (FilmSegment.first_frame >= next_frame) & (FilmSegment.last_frame >= next_frame) & (
+                FilmSegment.reel == seg.reel) & (FilmSegment.scope_type == seg.scope_type)
+    ).order_by(FilmSegment.first_frame.asc()).first()
+    prev_by_frame = FilmSegment.query.filter(
+        (FilmSegment.first_frame <= prev_frame) & (FilmSegment.last_frame <= prev_frame) & (
+                FilmSegment.reel == seg.reel) & (FilmSegment.scope_type == seg.scope_type)
+    ).order_by(FilmSegment.first_frame.desc()).first()
+
+    if prev_by_frame:
+        seg_dict['prev_by_frame'] = prev_by_frame.id
+    if next_by_frame:
+        seg_dict['next_by_frame'] = next_by_frame.id
+
+    # Add next/prev by CBD order
+    prev_cbd = min(seg_dict['first_cbd'], seg_dict['last_cbd']) - 1
+    next_cbd = max(seg_dict['first_cbd'], seg_dict['last_cbd']) + 1
+
+    next_by_cbd = FilmSegment.query.filter(
+        (FilmSegment.first_cbd >= next_cbd) & (FilmSegment.last_cbd >= next_cbd) & (
+                FilmSegment.flight == seg.flight) & (FilmSegment.scope_type == seg.scope_type)
+    ).order_by(FilmSegment.first_cbd.asc()).first()
+    prev_by_cbd = FilmSegment.query.filter(
+        (FilmSegment.first_cbd <= prev_cbd) & (FilmSegment.last_cbd <= prev_cbd) & (
+                FilmSegment.flight == seg.flight) & (FilmSegment.scope_type == seg.scope_type)
+    ).order_by(FilmSegment.first_cbd.desc()).first()
+
+    if prev_by_cbd:
+        seg_dict['prev_by_cbd'] = prev_by_cbd.id
+    if next_by_cbd:
+        seg_dict['next_by_cbd'] = next_by_cbd.id
+
 class FilmSegmentResource(Resource):
+
     def get(self, id):
         seg = FilmSegment.query.get_or_404(id)
         seg_dict = segment_schema.dump(seg)
-
-        # Add next/prev by frame order
-        prev_frame = min(seg_dict['first_frame'], seg_dict['last_frame']) - 1
-        next_frame = max(seg_dict['first_frame'], seg_dict['last_frame']) + 1
-
-        next_by_frame = FilmSegment.query.filter(
-                (FilmSegment.first_frame >= next_frame) & (FilmSegment.last_frame >= next_frame) & (FilmSegment.reel == seg.reel)
-            ).order_by(FilmSegment.first_frame.asc()).first()
-        prev_by_frame = FilmSegment.query.filter(
-                (FilmSegment.first_frame <= prev_frame) & (FilmSegment.last_frame <= prev_frame) & (FilmSegment.reel == seg.reel)
-            ).order_by(FilmSegment.first_frame.desc()).first()
-
-        if prev_by_frame:
-            seg_dict['prev_by_frame'] = prev_by_frame.id
-        if next_by_frame:
-            seg_dict['next_by_frame'] = next_by_frame.id
-
-        # Add next/prev by CBD order
-        prev_cbd = min(seg_dict['first_cbd'], seg_dict['last_cbd']) - 1
-        next_cbd = max(seg_dict['first_cbd'], seg_dict['last_cbd']) + 1
-
-        next_by_cbd = FilmSegment.query.filter(
-            (FilmSegment.first_cbd >= next_cbd) & (FilmSegment.last_cbd >= next_cbd) & (
-                        FilmSegment.flight == seg.flight)
-        ).order_by(FilmSegment.first_cbd.asc()).first()
-        prev_by_cbd = FilmSegment.query.filter(
-            (FilmSegment.first_cbd <= prev_cbd) & (FilmSegment.last_cbd <= prev_cbd) & (
-                        FilmSegment.flight == seg.flight)
-        ).order_by(FilmSegment.first_cbd.desc()).first()
-
-        if prev_by_cbd:
-            seg_dict['prev_by_cbd'] = prev_by_cbd.id
-        if next_by_cbd:
-            seg_dict['next_by_cbd'] = next_by_cbd.id
-
+        add_next_previous(seg_dict, seg)
         return seg_dict
 
     def post(self, id):
@@ -103,11 +109,22 @@ class FilmSegmentResource(Resource):
         if 'needs_review' in request.json:
             seg.needs_review = (request.json['needs_review'] == "review")
 
+        seg.updated_by = current_user.email
+        seg.last_changed = datetime.now()
+
         db.session.commit()
 
         return segment_schema.dump(seg), 200
 
 seg_api.add_resource(FilmSegmentResource, '/api/segments/<int:id>')
+
+@api_bp.route('/api/segments/<int:id>/version/<int:version>')
+def film_segment_version(id, version):
+    print(f"Fetching segment {id} at version {version}")
+    seg = FilmSegment.query.get_or_404(id)
+    seg_dict = segment_schema.dump(seg.versions[version])
+    add_next_previous(seg_dict, seg)
+    return seg_dict
 
 # Image Loading
 

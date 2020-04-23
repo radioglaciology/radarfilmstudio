@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_continuum import VersioningMixin
 
 from . import db
 
-class FilmSegment(db.Model):
+class FilmSegment(db.Model, VersioningMixin):
     id = db.Column(db.Integer, primary_key=True)
 
     path = db.Column(db.String(300), unique=True)
@@ -26,6 +27,11 @@ class FilmSegment(db.Model):
     RADAR_300MHZ = 20
     UNKNOWN = 0
     instrument_type = db.Column(db.Integer)
+
+    notes = db.Column(db.String)
+
+    updated_by = db.Column(db.String)
+    last_changed = db.Column(db.DateTime)
 
     def __repr__(self):
         return f'<FilmSegment {self.id}: Reel {self.reel} frames {self.first_frame} to {self.last_frame} [{self.path}]>'
