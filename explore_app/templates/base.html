@@ -23,6 +23,8 @@
 
     <link rel="stylesheet" type="text/css" href="/static/style.css">
 
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
 </head>
 <body>
 <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -50,13 +52,29 @@
         </div></div>
 
         <div class="navbar-end">
+            {% if current_user.is_authenticated %}
+            <div class="navbar-item">
+                <p>Hi, {{ current_user.first_name }}!</p>
+            </div>
             <div class="navbar-item">
                 <div class="buttons">
-                    <a class="button is-light is-disabled">
-                        Log in
+                    <a href="{{ url_for('auth_bp.logout') }}" class="button is-light">
+                        Log out
                     </a>
                 </div>
             </div>
+            {% else %}
+            <div class="navbar-item">
+                <div class="buttons">
+                    <a href="{{ url_for('auth_bp.login') }}" class="button">
+                        Log in
+                    </a>
+                    <a href="{{ url_for('auth_bp.signup') }}" class="button">
+                        Create Account
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </nav>

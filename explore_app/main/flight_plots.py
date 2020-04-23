@@ -1,7 +1,6 @@
-from bokeh.io import output_file, show, output_notebook
 from bokeh.plotting import figure
 from bokeh.models.sources import ColumnDataSource
-from bokeh.models import OpenURL, TapTool, CustomJS, CDSView, GroupFilter, CustomJSFilter
+from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
@@ -9,7 +8,7 @@ from bokeh.models import Toggle
 
 import pandas as pd
 
-from film_segment import FilmSegment
+from explore_app.film_segment import FilmSegment
 
 
 def make_cbd_plot(session, flight_id, width, height):

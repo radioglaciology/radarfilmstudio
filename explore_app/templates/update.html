@@ -156,14 +156,18 @@
                 <div class="level-right">
                     <div class="level-item" id="update-loading" style="display: none;"><i class='fas fa-spinner fa-spin'></i></div>
                     <div class="level-item">
-                        <div class="field is-grouped">
-                            <div class="control">
-                                <button id="submit-update" class="button is-link">Update</button>
+                        {% if (current_user.is_authenticated and current_user.write_permission) %}
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <button id="submit-update" class="button is-link">Update</button>
+                                </div>
+                                <div class="control">
+                                    <button id="reset-update" class="button is-link has-background-warning">Reset</button>
+                                </div>
                             </div>
-                            <div class="control">
-                                <button id="reset-update" class="button is-link has-background-warning">Reset</button>
-                            </div>
-                        </div>
+                        {% else %}
+                            <p>You don't have write permissions yet.</p>
+                        {% endif %}
                     </div>
                 </div>
             </nav>
