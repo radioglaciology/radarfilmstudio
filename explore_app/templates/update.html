@@ -1,6 +1,6 @@
 <div class="box">
 
-    <div class="loader-wrapper">
+    <div id="update-load-overlay" class="loader-wrapper">
         <div class="loader is-loading"></div>
     </div>
 
@@ -221,14 +221,13 @@
             .done(function() {
                 $("#update-loading").html("<i class='fas fa-check'></i>");
                 update_form_id(current_id);
-                $("#update-loading").fadeOut(2000);
-                setTimeout(function() {  $("#update-loading").html("") }, 2000);
             })
             .fail(function() {
                 $("#update-loading").html("<i class='fas fa-exclamation-triangle'></i> Sorry, your update failed for some reason.")
             })
             .always(function(){
-
+                $("#update-loading").fadeOut(2000);
+                setTimeout(function() {  $("#update-loading").html("") }, 2000);
             });
     });
 
@@ -237,12 +236,20 @@
         update_form_id(current_id);
     });
 
-    function update_form_id(id) {
+    function update_form_id(id, version) {
         console.log("Loading " + id)
-        $('.loader-wrapper').addClass('loader-is-active');
+        $('#update-load-overlay').addClass('loader-is-active');
 
         current_id = id;
-        $.getJSON( "/api/segments/"+id, function( data ) {
+
+        var api_path = ""
+        if (typeof version == 'undefined'){
+            api_path = "/api/segments/"+id
+        } else {
+            api_path = "/api/segments/"+id+"/version/"+version
+        }
+
+        $.getJSON( api_path, function( data ) {
             $("#update_segment_id").val(-1);
             $("#update_segment_first_cbd").val(data['first_cbd']);
             $("#update_segment_last_cbd").val(data['last_cbd']);
@@ -302,7 +309,7 @@
             $("#download-jpeg-link").prop('href', "/api/radargram/jpg/"+id+".jpg").removeClass("disabled");
             $("#download-tiff-link").prop('href', "/api/radargram/tiff/"+id+".tiff").removeClass("disabled");
 
-            $('.loader-wrapper').removeClass('loader-is-active');
+            $('#update-load-overlay').removeClass('loader-is-active');
 
         });
         viewer.load("/api/radargram/jpg/"+id+"/h/200", "/api/radargram/jpg/"+id);

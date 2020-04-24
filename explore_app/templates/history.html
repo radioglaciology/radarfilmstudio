@@ -1,6 +1,6 @@
 <div class="box">
 
-    <div class="loader-wrapper">
+    <div id="history-load-overlay" class="loader-wrapper">
         <div class="loader is-loading"></div>
     </div>
 
@@ -28,7 +28,7 @@
 <script type='text/javascript'>
     function update_history_id(id) {
         console.log("Fetching history for " + id)
-        $('.loader-wrapper').addClass('loader-is-active');
+        $('#history-load-overlay').addClass('loader-is-active');
         $('#history').html("");
 
         current_id = id;
@@ -44,14 +44,17 @@
                         vals[1]+"</span></li>";
                 });
 
-                $('#history').append(
-                    "<details><summary>Revision "+key+" by "+
-                    "<span class='tag'>"+val['updated_by'][1]+"</span>"+
-                    " on "+val['last_changed'][1]+"</summary>"+
-                    "<div class='content'><ul>"+changes_html+"</ul></div></details>")
+                if (('updated_by' in val) && ('last_changed' in val)) {
+                    $('#history').append(
+                        "<details><summary>Revision " + key + " by " +
+                        "<span class='tag'>" + val['updated_by'][1] + "</span>" +
+                        " on " + val['last_changed'][1] + "</summary>" +
+                        "<div class='content'><ul>" + changes_html +
+                        "<br /><a class='button is-primary' onclick='update_form_id(current_id, "+key+");'>Load this revision</a></ul></div></details>");
+                }
             })
         });
 
-        $('.loader-wrapper').removeClass('loader-is-active');
+        $('#history-load-overlay').removeClass('loader-is-active');
     }
 </script>

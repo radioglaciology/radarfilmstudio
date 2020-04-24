@@ -130,14 +130,14 @@ def film_segment_version(id, version):
 
 @api_bp.route('/api/segments/<int:id>/history')
 def film_segment_history(id):
-    #if not has_write_permission(current_user):
-    #    return None, 401
+    if not has_write_permission(current_user):
+        return None, 401
 
     seg = FilmSegment.query.get_or_404(id)
 
     print(count_versions(seg))
     history = []
-    for version in range(count_versions(seg)-1,-1,-1):
+    for version in range(count_versions(seg)):
         history.append(seg.versions[version].changeset)
 
     return {'history': history}
