@@ -4,6 +4,8 @@
         <div class="loader is-loading"></div>
     </div>
 
+    <h2 class="subtitle">Image and Metadata</h2>
+
     <div class="container">
         <div id="flight-radargram"></div>
         <div style="text-align: right;">
@@ -217,14 +219,16 @@
                 dataType: "json"
             })
             .done(function() {
-                $("#update-loading").html("<i class='fas fa-check'></i>")
-            })
-            .fail(function() {
-                $("#update-loading").html("<i class='fas fa-exclamation-triangle'></i>")
-            })
-            .always(function(){
+                $("#update-loading").html("<i class='fas fa-check'></i>");
+                update_form_id(current_id);
                 $("#update-loading").fadeOut(2000);
                 setTimeout(function() {  $("#update-loading").html("") }, 2000);
+            })
+            .fail(function() {
+                $("#update-loading").html("<i class='fas fa-exclamation-triangle'></i> Sorry, your update failed for some reason.")
+            })
+            .always(function(){
+
             });
     });
 
@@ -302,6 +306,10 @@
 
         });
         viewer.load("/api/radargram/jpg/"+id+"/h/200", "/api/radargram/jpg/"+id);
+
+        if (typeof update_history_id == 'function') {
+            update_history_id(id);
+        }
         //$("#radargram").attr("src","/api/radargram/jpg/"+id);
     }
 </script>

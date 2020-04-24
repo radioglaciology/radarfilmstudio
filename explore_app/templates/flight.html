@@ -20,5 +20,10 @@
     <div class="container" id="flight-update">
         {%  include "update.html" %}
     </div>
+    {% if (current_user.is_authenticated and current_user.write_permission) %}
+        <div class="container" id="flight-history">
+            {%  include "history.html" %}
+        </div>
+    {% endif %}
 </section>
 {% endblock %}

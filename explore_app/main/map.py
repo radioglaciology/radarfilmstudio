@@ -36,7 +36,7 @@ def load_flight_lines(positioning_dir):
     return flight_lines
 
 
-def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None):
+def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None, return_plot=False):
     if not flight_lines:
         print("Warning: Recommend pre-loading positioning files to speedup page load.")
         flight_lines = load_flight_lines('../original_positioning/')
@@ -63,5 +63,8 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None)
     p.height = height
     p.title.text = title
 
-    script, div = components(p)
-    return f'\n{script}\n\n{div}\n'
+    if return_plot:
+        return p, flight_lines
+    else:
+        script, div = components(p)
+        return f'\n{script}\n\n{div}\n'

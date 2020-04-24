@@ -1,0 +1,57 @@
+<div class="box">
+
+    <div class="loader-wrapper">
+        <div class="loader is-loading"></div>
+    </div>
+
+    <h2 class="subtitle">Metadata Revision History</h2>
+
+    <div class="content">
+        <p>
+            You can expand each revision to see what changes were made in that update.
+            Revisions may be attributed to human users (indicated by a user email address),
+            imported data sources (i.e. most fields are initally populated from
+            <span class='tag'>fixed8.csv</span>), or by scripts run on the data. Note that
+            this view is only available to users with permission to edit the database.
+        </p>
+        <p>
+            Clicking the "Load this revision" button will load the revision into the metadata view above,
+            but does not actually save anything to the database until you press "Update" above.
+        </p>
+    </div>
+
+    <div id="history" class="container">
+    </div>
+
+</div>
+
+<script type='text/javascript'>
+    function update_history_id(id) {
+        console.log("Fetching history for " + id)
+        $('.loader-wrapper').addClass('loader-is-active');
+        $('#history').html("");
+
+        current_id = id;
+        $.getJSON( "/api/segments/"+id+"/history", function( data ) {
+            $.each(data.history, function(key, val) {
+                var changes_html = ""
+
+                $.each(val, function(key, vals) {
+                    changes_html = changes_html +
+                        "<li><span class='tag'>"+key+"</span>"+
+                        " Changed from <span class='is-family-code'>"+
+                        vals[0]+"</span> to <span class='is-family-code'>"+
+                        vals[1]+"</span></li>";
+                });
+
+                $('#history').append(
+                    "<details><summary>Revision "+key+" by "+
+                    "<span class='tag'>"+val['updated_by'][1]+"</span>"+
+                    " on "+val['last_changed'][1]+"</summary>"+
+                    "<div class='content'><ul>"+changes_html+"</ul></div></details>")
+            })
+        });
+
+        $('.loader-wrapper').removeClass('loader-is-active');
+    }
+</script>

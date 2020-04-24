@@ -10,8 +10,10 @@ import pandas as pd
 
 from explore_app.film_segment import FilmSegment
 
+from explore_app.main.map import make_bokeh_map
 
-def make_cbd_plot(session, flight_id, width, height):
+
+def make_cbd_plot(session, flight_id, width, height, return_plot=False):
     df = pd.read_sql(session.query(FilmSegment).filter(FilmSegment.flight == flight_id).statement, session.bind)
     source = ColumnDataSource(df)
 
@@ -93,7 +95,39 @@ def make_cbd_plot(session, flight_id, width, height):
     callback = CustomJS(args={'source': source}, code=code)
     tap.callback = callback
 
-    layout = row(p, column(toggle_verified, toggle_junk, toggle_z, toggle_a))
+    if return_plot:
+        return p, column(toggle_verified, toggle_junk, toggle_z, toggle_a), source
+    else:
+        layout = row(p, column(toggle_verified, toggle_junk, toggle_z, toggle_a))
 
-    script, div = components(layout)
-    return f'\n{script}\n\n{div}\n'
+        script, div = components(layout)
+        return f'\n{script}\n\n{div}\n'
+
+
+def make_linked_flight_plots(session, flight_id, flight_lines=None):
+    p_map, map_flight_lines = make_bokeh_map(300, 300, flight_id=flight_id, title=f"Flight {flight_id}",
+                           flight_lines=flight_lines, return_plot=True)
+    p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, 500, 300, return_plot=True)
+
+    # What this does:
+    # 1. Only allow selection of one segment at a time
+    # Old additional code:
+    #     var inds = cb_obj.indices;
+    #     var cbd_data = cbd_source.data;
+    #     for (var i = 0; i < inds.length; i++) {
+    #         console.log(cbd_data['first_cbd'][inds[i]]);
+    #         console.log(cbd_data['last_cbd'][inds[i]]);
+    #     }
+    cbd_source.selected.js_on_change('indices', CustomJS(args=dict(cbd_source=cbd_source), code="""
+        cb_obj.indices = [cb_obj.indices[0]];
+    """))
+
+
+    layout = row(p_cbd, cbd_controls)
+    cbd_script, cbd_div = components(layout)
+    cbd_html = f'\n{cbd_script}\n\n{cbd_div}\n'
+
+    map_script, map_div = components(p_map)
+    map_html = f"\n{map_script}\n\n{map_div}\n"
+
+    return map_html, cbd_html

@@ -6,9 +6,10 @@ from datetime import datetime
 from flask import Blueprint, request, send_file, send_from_directory
 from flask_restful import Api, Resource
 from flask_login import current_user
+from sqlalchemy_continuum.utils import count_versions
 
 from flask import current_app as app
-from .. import db, ma
+from .. import db, ma, continuum
 
 from explore_app.film_segment import FilmSegment
 
@@ -27,6 +28,13 @@ class FilmSegmentSchema(ma.Schema):
 
 
 segment_schema = FilmSegmentSchema()
+
+
+def has_write_permission(current_user):
+    if not current_user.is_authenticated:
+        return False
+
+    return current_user.write_permission
 
 
 def add_next_previous(seg_dict, seg):
@@ -75,12 +83,7 @@ class FilmSegmentResource(Resource):
         return seg_dict
 
     def post(self, id):
-        if not current_user.is_authenticated:
-            return None, 401
-
-        print(current_user)
-
-        if not current_user.write_permission:
+        if not has_write_permission(current_user):
             return None, 401
 
         seg = FilmSegment.query.get_or_404(id)
@@ -120,11 +123,25 @@ seg_api.add_resource(FilmSegmentResource, '/api/segments/<int:id>')
 
 @api_bp.route('/api/segments/<int:id>/version/<int:version>')
 def film_segment_version(id, version):
-    print(f"Fetching segment {id} at version {version}")
     seg = FilmSegment.query.get_or_404(id)
     seg_dict = segment_schema.dump(seg.versions[version])
     add_next_previous(seg_dict, seg)
     return seg_dict
+
+@api_bp.route('/api/segments/<int:id>/history')
+def film_segment_history(id):
+    #if not has_write_permission(current_user):
+    #    return None, 401
+
+    seg = FilmSegment.query.get_or_404(id)
+
+    print(count_versions(seg))
+    history = []
+    for version in range(count_versions(seg)-1,-1,-1):
+        history.append(seg.versions[version].changeset)
+
+    return {'history': history}
+
 
 # Image Loading
 
