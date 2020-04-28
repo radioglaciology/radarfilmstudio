@@ -154,6 +154,16 @@
                 </div>
             </nav>
             <nav class="level">
+                <div class="level-item" style="width: 100%;">
+                    <div class="field" style="width: 100%; margin: 1.3em;">
+                        <label class="label">Notes</label>
+                        <div class="control">
+                            <textarea class="textarea" id="update_segment_notes" name="notes"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <nav class="level">
                 <div class="level-left"></div>
                 <div class="level-right">
                     <div class="level-item" id="update-loading" style="display: none;"><i class='fas fa-spinner fa-spin'></i></div>
@@ -263,6 +273,7 @@
             $("#update_segment_is_verified").prop('checked', data['is_verified']);
             $("#update_segment_needs_review").prop('checked', data['needs_review']);
             $("#update_segment_id").val(data['id']);
+            $("#update_segment_notes").val(data['notes']);
 
             // Update next/previous buttons
             if(data['next_by_frame']) {

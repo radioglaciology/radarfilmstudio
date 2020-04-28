@@ -104,6 +104,8 @@ class FilmSegmentResource(Resource):
             seg.scope_type = request.json['scope_type']
         if 'instrument_type' in request.json:
             seg.instrument_type = request.json['instrument_type']
+        if 'notes' in request.json:
+            seg.notes = request.json['notes']
 
         if 'is_junk' in request.json:
             seg.is_junk = (request.json['is_junk'] == "junk")
