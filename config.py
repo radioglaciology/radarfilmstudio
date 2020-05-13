@@ -18,7 +18,7 @@ class Config:
     FLIGHT_POSITIONING_DIR = '../original_positioning/'
 
     CACHE_TYPE = 'simple'
-    CACHE_DEFAULT_TIMEOUT = 30
+    CACHE_DEFAULT_TIMEOUT = 300
 
     # Stanford brand identity colors
     COLOR_PRIMARY = '#8c1515'  # Cardinal red

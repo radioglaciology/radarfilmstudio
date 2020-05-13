@@ -12,13 +12,13 @@ main_bp = Blueprint('main_bp', __name__,
                     static_folder='static')
 
 flight_lines = load_flight_lines(app.config['FLIGHT_POSITIONING_DIR'])
+all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines)
 
 @main_bp.route('/')
 @main_bp.route('/map/')
 @cache.cached()
 def map_page():
-    flights_map = make_bokeh_map(500, 500, flight_lines=flight_lines)
-    return render_template("map.html", map=flights_map,
+    return render_template("map.html", map=all_flights_map,
                            breadcrumbs=[('Explorer', '/'),
                                         ('Map', url_for('main_bp.map_page'))])
 
