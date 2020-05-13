@@ -19,3 +19,14 @@ class Config:
 
     CACHE_TYPE = 'simple'
     CACHE_DEFAULT_TIMEOUT = 30
+
+    # Stanford brand identity colors
+    COLOR_PRIMARY = '#8c1515'  # Cardinal red
+    COLOR_ACCENT = '#b1040e'  # Bright red
+    COLOR_BACKGROUND = '#ffffff'  # White
+    COLOR_GREY = '#4d4f53'  # Cool grey
+    COLOR_GRAY = COLOR_GREY  # I hate spelling
+    COLOR_BLACK = '#2e2d29'  # Black (but not actually)
+    COLOR_PALO_ALTO = '#175e54'  # I'm not making this up... https://identity.stanford.edu/color.html#digital-color
+    COLOR_REDWOOD = '#8d3c1e'  # Redwood
+    COLOR_PURPLE = '#53284f'  # Purple

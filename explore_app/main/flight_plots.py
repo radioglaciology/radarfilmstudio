@@ -4,17 +4,34 @@ from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
-from bokeh.models import Toggle
+from bokeh.models import Toggle, Select, CustomJS, Circle
 
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 from explore_app.film_segment import FilmSegment
 
 from explore_app.main.map import make_bokeh_map
 
+from flask import current_app as app
+
 
 def make_cbd_plot(session, flight_id, width, height, return_plot=False):
     df = pd.read_sql(session.query(FilmSegment).filter(FilmSegment.flight == flight_id).statement, session.bind)
+
+    # Add colormaps to plot
+    norm_reels = matplotlib.colors.Normalize(vmin=1, vmax=57, clip=True)
+    mapper_reels = plt.cm.ScalarMappable(norm=norm_reels, cmap=plt.cm.viridis)
+
+    df['Color by Reel'] = df['reel'].apply(lambda x: mcolors.to_hex(mapper_reels.to_rgba(x)))
+    df['Color by Verified'] = df['is_verified'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
+    df['Color by Review'] = df['needs_review'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
+    df['Color by Frequency'] = df['instrument_type'].apply(lambda x: app.config['COLOR_REDWOOD'] if x == FilmSegment.RADAR_60MHZ else (app.config['COLOR_PALO_ALOT'] if x == FilmSegment.RADAR_300MHZ else app.config['COLOR_GRAY']))
+
+    #
+
     source = ColumnDataSource(df)
 
     toggle_verified = Toggle(label="Show only verified")
@@ -73,9 +90,19 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False):
     p = figure(tools=['pan,wheel_zoom,box_zoom,reset,tap,hover'], tooltips=TOOLTIPS)
 
     p.segment(y0='first_frame', y1='last_frame', x0='first_cbd', x1='last_cbd',
-              color=linear_cmap('reel', "Viridis256", 1, 57), source=source, view=view)
-    p.scatter('first_cbd', 'first_frame', color=linear_cmap('reel', "Viridis256", 1, 57), source=source, view=view)
-    p.scatter('last_cbd', 'last_frame', color=linear_cmap('reel', "Viridis256", 1, 57), source=source, view=view)
+              color=app.config["COLOR_GRAY"], source=source, view=view)
+    scat_first = p.scatter('first_cbd', 'first_frame', color='Color by Verified', source=source, view=view,
+                           nonselection_fill_color=app.config["COLOR_GRAY"])
+    scat_last = p.scatter('last_cbd', 'last_frame', color='Color by Verified', source=source, view=view,
+                          nonselection_fill_color=app.config["COLOR_GRAY"])
+
+    # selected_circle = Circle(fill_alpha=1, fill_color="Color by Verified", line_color="Color by Verified", radius=1)
+    # nonselected_circle = Circle(fill_alpha=1, fill_color="Color by Verified", line_color="Color by Verified", radius=1)
+    #
+    # scat_last.selection_glyph = selected_circle
+    # #scat_first.selection_glyph = selected_circle
+    # scat_last.nonselection_glyph = nonselected_circle
+    # #scat_first.nonselection_glyph = nonselected_circle
 
     p.xaxis.axis_label = "CBD"
     p.yaxis.axis_label = "Frame"
@@ -95,10 +122,23 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False):
     callback = CustomJS(args={'source': source}, code=code)
     tap.callback = callback
 
+    cb_cselect = CustomJS(args=dict(s1=scat_first, s2=scat_last, csource=source), code="""
+            var selected_color = cb_obj.value;
+            s1.glyph.line_color.field = selected_color;
+            s1.glyph.fill_color.field = selected_color;
+            s2.glyph.line_color.field = selected_color;
+            s2.glyph.fill_color.field = selected_color;
+            csource.change.emit();
+        """)
+
+    color_select = Select(value="Color by Verified",
+                          options=["Color by Verified", "Color by Reel", "Color by Review", "Color by Frequency"],
+                          callback=cb_cselect)
+
     if return_plot:
-        return p, column(toggle_verified, toggle_junk, toggle_z, toggle_a), source
+        return p, column(toggle_verified, toggle_junk, toggle_z, toggle_a, color_select), source
     else:
-        layout = row(p, column(toggle_verified, toggle_junk, toggle_z, toggle_a))
+        layout = row(p, column(toggle_verified, toggle_junk, toggle_z, toggle_a, color_select))
 
         script, div = components(layout)
         return f'\n{script}\n\n{div}\n'
@@ -119,7 +159,9 @@ def make_linked_flight_plots(session, flight_id, flight_lines=None):
     #         console.log(cbd_data['last_cbd'][inds[i]]);
     #     }
     cbd_source.selected.js_on_change('indices', CustomJS(args=dict(cbd_source=cbd_source), code="""
-        cb_obj.indices = [cb_obj.indices[0]];
+        if (cb_obj.indices.length > 0) {
+            cb_obj.indices = [cb_obj.indices[0]];
+        }
     """))
 
 
