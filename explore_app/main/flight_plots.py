@@ -22,7 +22,7 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False):
     df = pd.read_sql(session.query(FilmSegment).filter(FilmSegment.flight == flight_id).statement, session.bind)
 
     # Add colormaps to plot
-    norm_reels = matplotlib.colors.Normalize(vmin=1, vmax=57, clip=True)
+    norm_reels = matplotlib.colors.Normalize(vmin=df['reel'].min(), vmax=df['reel'].max(), clip=True)
     mapper_reels = plt.cm.ScalarMappable(norm=norm_reels, cmap=plt.cm.viridis)
 
     df['Color by Reel'] = df['reel'].apply(lambda x: mcolors.to_hex(mapper_reels.to_rgba(x)))
