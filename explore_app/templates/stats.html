@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block header_extra %}<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">{% endblock %}
+
+{% block title %}Labelling Progress{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h3>Overall Progress</h3>
+        <nav class="level">
+            <div class="level-item has-text-centered" style="width:100%;">
+                <div class="w3-light-grey" style="width:100%;">
+                    <div class="w3-container w3-green w3-center" style="width:{{ percent }}%; white-space: nowrap; color:black;">
+                        <span style="color:black;">{{ total_verified }} / {{ total }}  ({{ percent }}%)</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <h3>Progress by Flight</h3>
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                    {{ flightprogress|safe }}
+            </div>
+        </nav>
+    </div>
+</section>
+{% endblock %}

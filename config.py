@@ -30,3 +30,4 @@ class Config:
     COLOR_PALO_ALTO = '#175e54'  # I'm not making this up... https://identity.stanford.edu/color.html#digital-color
     COLOR_REDWOOD = '#8d3c1e'  # Redwood
     COLOR_PURPLE = '#53284f'  # Purple
+    COLOR_SKY = '#0098db'  # Sky (light blue)

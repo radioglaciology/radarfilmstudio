@@ -25,6 +25,8 @@
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
+    {% block header_extra %}{% endblock %}
+
 </head>
 <body>
 <nav class="navbar" role="navigation" aria-label="main navigation">

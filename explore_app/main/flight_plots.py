@@ -145,8 +145,8 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False):
 
 
 def make_linked_flight_plots(session, flight_id, flight_lines=None):
-    p_map, map_flight_lines = make_bokeh_map(300, 300, flight_id=flight_id, title=f"Flight {flight_id}",
-                           flight_lines=flight_lines, return_plot=True)
+    map_html = make_bokeh_map(300, 300, flight_id=flight_id, title=f"Flight {flight_id}",
+                           flight_lines=flight_lines, return_plot=False)
     p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, 500, 300, return_plot=True)
 
     # What this does:
@@ -169,7 +169,7 @@ def make_linked_flight_plots(session, flight_id, flight_lines=None):
     cbd_script, cbd_div = components(layout)
     cbd_html = f'\n{cbd_script}\n\n{cbd_div}\n'
 
-    map_script, map_div = components(p_map)
-    map_html = f"\n{map_script}\n\n{map_div}\n"
+    #map_script, map_div = components(p_map)
+    #map_html = f"\n{map_script}\n\n{map_div}\n"
 
     return map_html, cbd_html
