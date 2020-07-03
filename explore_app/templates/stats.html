@@ -7,6 +7,12 @@
 {% block content %}
 <section class="section">
     <div class="container">
+
+        <div class="notification">
+            These stats were last refreshed <span class="is-italic">{{ update_string }}</span>. Stats are periodically
+            updated in the background and cached to improve page load time. If you need a quick update,
+            <a href="/stats/refresh/" alt="reload stats now">click here</a> (may take a few seconds to load).
+        </div>
         <h3>Overall Progress</h3>
         <nav class="level">
             <div class="level-item has-text-centered" style="width:100%;">

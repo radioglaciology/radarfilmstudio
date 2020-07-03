@@ -1,9 +1,15 @@
 """Flask config class."""
 import os
 
-
 class Config:
-    """Set Flask configuration vars."""
+    """
+    Set Flask configuration vars and various other app-wide configuration.
+
+    Note that some of these settings are deployment-location specific, so they're actually loaded from environment
+    variables. The best place to configure these is in the .env file. The .env file should NOT be added to the git
+    repo and should be independently maintained for each deployment.
+
+    """
 
     # General Config
     TESTING = True
@@ -14,8 +20,6 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///explore.db'
-
-    FLIGHT_POSITIONING_DIR = '../original_positioning/'
 
     CACHE_TYPE = 'simple'
     CACHE_DEFAULT_TIMEOUT = 300
@@ -31,3 +35,10 @@ class Config:
     COLOR_REDWOOD = '#8d3c1e'  # Redwood
     COLOR_PURPLE = '#53284f'  # Purple
     COLOR_SKY = '#0098db'  # Sky (light blue)
+
+    # Data locations
+    FLIGHT_POSITIONING_DIR = os.environ.get('FLIGHT_POSITIONING_DIR')
+    FILM_IMAGES_DIR = os.environ.get('FILM_IMAGES_DIR')
+
+    # APScheduler
+    SCHEDULER_API_ENABLED = True

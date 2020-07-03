@@ -35,7 +35,8 @@
             <img src="/static/logo.png" height="28">
         </a>
 
-        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false"
+           data-target="navbarBasicExample">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -43,44 +44,64 @@
     </div>
 
     <div id="navbarBasicExample" class="navbar-menu">
-        <div class="navbar-start"><div class="navbar-item">
-            <nav class="breadcrumb" aria-label="breadcrumbs">
-                <ul>
-                    {% for b, l in breadcrumbs %}
-                        <li><a href="{{ l }}">{{ b }}</a></li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        </div></div>
+        <div class="navbar-start">
+            <div class="navbar-item">
+                <nav class="breadcrumb" aria-label="breadcrumbs">
+                    <ul>
+                        {% for b, l in breadcrumbs %}
+                            <li><a href="{{ l }}">{{ b }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
 
         <div class="navbar-end">
             {% if current_user.is_authenticated %}
-            <div class="navbar-item">
-                <p>Hi, {{ current_user.first_name }}!</p>
-            </div>
-            <div class="navbar-item">
-                <div class="buttons">
-                    <a href="{{ url_for('auth_bp.logout') }}" class="button is-light">
-                        Log out
-                    </a>
+                <div class="navbar-item">
+                    <p>Hi, {{ current_user.first_name }}!</p>
                 </div>
-            </div>
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a href="{{ url_for('auth_bp.logout') }}" class="button is-light">
+                            Log out
+                        </a>
+                    </div>
+                </div>
             {% else %}
-            <div class="navbar-item">
-                <div class="buttons">
-                    <a href="{{ url_for('auth_bp.login') }}" class="button">
-                        Log in
-                    </a>
-                    <a href="{{ url_for('auth_bp.signup') }}" class="button">
-                        Create Account
-                    </a>
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a href="{{ url_for('auth_bp.login') }}" class="button">
+                            Log in
+                        </a>
+                        <a href="{{ url_for('auth_bp.signup') }}" class="button">
+                            Create Account
+                        </a>
+                    </div>
                 </div>
-            </div>
             {% endif %}
         </div>
     </div>
 </nav>
 {% block content %}
 {% endblock %}
+
+<footer class="footer">
+    <div class="content has-text-right">
+        <p>
+            This page was generated in __EXECUTION_TIME__ seconds.
+            <a href="https://exhibits.stanford.edu/radarfilm" alt="Stanford page about the film digitization project"><i
+                    class="fa fa-info-circle" aria-hidden="true"></i></a>
+            <a href="https://dx.doi.org/10.1073/pnas.1821646116"
+               alt="Link to the initial paper about the film digitization"><i class="fas fa-file-alt"></i></a>
+            <a href="https://github.com/radioglaciology/spri-explore"
+               alt="GitHub repo for this project (not public - you may need to be granted access)"><i
+                    class="fab fa-github"></i></a>
+        </p>
+        <p>
+            Need help? Ask questions in the #spri_film_project channel on <a href="http://radioglaciology.slack.com/" alt="Radio Glaciology Slack"><i class="fab fa-slack"></i></a>.
+        </p>
+    </div>
+</footer>
 </body>
 </html>

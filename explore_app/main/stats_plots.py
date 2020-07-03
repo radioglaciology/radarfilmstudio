@@ -10,13 +10,14 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from datetime import datetime
+import time
 
 from explore_app.film_segment import FilmSegment
 
 from explore_app.main.map import make_bokeh_map
 
 from flask import current_app as app
+from flask import g
 from sqlalchemy import and_
 
 flight_progress_stats = {
@@ -26,6 +27,7 @@ flight_progress_stats = {
     'verified': [],
     'unverified': []
 }
+
 
 def update_flight_progress_stats(session):
     distinct_ids = FilmSegment.query.with_entities(FilmSegment.flight).distinct().all()
@@ -48,10 +50,8 @@ def update_flight_progress_stats(session):
     flight_progress_stats['verified'] = verified_list
     flight_progress_stats['unverified'] = unverified_list
 
-def make_flight_progress_bar_plot(session):
-    # TODO check on data and update if needed
-    update_flight_progress_stats(session)
 
+def make_flight_progress_bar_plot():
     fps_df = pd.DataFrame(flight_progress_stats).sort_values(by='flight_ids', ascending=False)
 
     p = figure(y_range=fps_df['flights'], plot_height=20*len(flight_progress_stats['flight_ids']),

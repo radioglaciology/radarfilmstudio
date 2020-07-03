@@ -157,27 +157,22 @@ def serve_pil_image(pil_img):
 @api_bp.route('/api/radargram/jpg/<int:id>.jpg')
 @api_bp.route('/api/radargram/jpg/<int:id>/h/<int:max_height>')
 def radargram_jpg(id, max_height = None):
-    base_path = "/data3/schroeder/jemmons/35mm_output.2018-01-12"
-
     seg = FilmSegment.query.get(id)
     pre, ext = os.path.splitext(seg.path)
     filename = pre + ".jpg"
 
     if max_height:
-        im = Image.open(os.path.join(base_path, filename))
+        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
         if max_height >= im.height:
-            return send_from_directory(base_path,
-                                       filename)
+            return send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
         else:
             scale = max_height / im.height
             return serve_pil_image(im.resize((int(im.width*scale), int(im.height*scale))))
     else:
-        return send_from_directory(base_path,
-                                    filename)
+        return send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
 
 @api_bp.route('/api/radargram/tiff/<int:id>')
 @api_bp.route('/api/radargram/tiff/<int:id>.tiff')
 def radargram_tiff(id):
-    base_path = "/data3/schroeder/jemmons/35mm_output.2018-01-12"
     seg = FilmSegment.query.get(id)
-    return send_from_directory(base_path, seg.path)
+    return send_from_directory(app.config['FILM_IMAGES_DIR'], seg.path)
