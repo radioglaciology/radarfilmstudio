@@ -85,9 +85,10 @@ def stats_page():
 
 @scheduler.task('interval', id='update_stats', seconds=(60*30))
 def update_stats():
-    print("Attempting to update stats...")
     with db.app.app_context():
         update_flight_progress_stats(db.session)
+        global flight_progress_stats_updated
+        flight_progress_stats_updated = time.time()
 
 # Page load time logic
 

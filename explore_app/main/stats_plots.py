@@ -1,6 +1,6 @@
 from bokeh.plotting import figure
 from bokeh.models.sources import ColumnDataSource
-from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter
+from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter, OpenURL
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
@@ -55,7 +55,7 @@ def make_flight_progress_bar_plot():
     fps_df = pd.DataFrame(flight_progress_stats).sort_values(by='flight_ids', ascending=False)
 
     p = figure(y_range=fps_df['flights'], plot_height=20*len(flight_progress_stats['flight_ids']),
-               toolbar_location=None, tools="hover", tooltips="@$name")
+               toolbar_location=None, tools="hover,tap", tooltips="@$name film segments")
 
     p.hbar_stack(['verified', 'unverified'], y='flights', height=0.8,
                  source=ColumnDataSource(fps_df),
@@ -70,6 +70,10 @@ def make_flight_progress_bar_plot():
     p.min_border_top = 0
     p.min_border_bottom = 0
     p.sizing_mode = 'stretch_width'
+
+    url = "/flight/@flight_ids/"
+    taptool = p.select(type=TapTool)
+    taptool.callback = OpenURL(url=url, same_tab=True)
 
     script, div = components(p)
     return f'\n{script}\n\n{div}\n'
