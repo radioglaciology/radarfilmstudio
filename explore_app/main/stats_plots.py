@@ -30,15 +30,15 @@ flight_progress_stats = {
 
 
 def update_flight_progress_stats(session):
-    distinct_ids = FilmSegment.query.with_entities(FilmSegment.flight).distinct().all()
+    distinct_ids = FilmSegment.query.filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight).distinct().all()
     flight_ids = [x[0] for x in distinct_ids]
 
     verified_list = []
     unverified_list = []
     total_list = []
     for fid in flight_ids:
-        count_verified = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.is_verified == True)).count()
-        count_total = FilmSegment.query.filter(FilmSegment.flight == fid).count()
+        count_verified = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.is_verified == True, FilmSegment.is_junk == False)).count()
+        count_total = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.is_junk == False)).count()
 
         verified_list.append(count_verified)
         total_list.append(count_total)
