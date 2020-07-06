@@ -47,7 +47,11 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
         if flight_id in flight_lines:
             flight_lines = [flight_lines[flight_id]]
         else:
-            return "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
+            not_found_html = "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
+            if return_plot:
+                return not_found_html, None
+            else:
+                return not_found_html
 
     points = gv.Points([(166.668, -77.846)])
 
