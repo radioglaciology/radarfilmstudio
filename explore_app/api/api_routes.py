@@ -159,7 +159,7 @@ def serve_pil_image(pil_img):
 def radargram_jpg(id, max_height = None):
     seg = FilmSegment.query.get(id)
     pre, ext = os.path.splitext(seg.path)
-    filename = pre + ".jpg"
+    filename = pre + "_lowqual.jpg"
 
     if max_height:
         im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
