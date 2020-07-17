@@ -18,7 +18,7 @@ from explore_app.main.map import make_bokeh_map
 from flask import current_app as app
 
 
-def make_cbd_plot(session, flight_id, width, height, return_plot=False):
+def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=0):
     df = pd.read_sql(session.query(FilmSegment).filter(FilmSegment.flight == flight_id).statement, session.bind)
 
     # Add colormaps to plot
@@ -114,8 +114,8 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False):
 
     # Select matching code from https://stackoverflow.com/questions/54768576/python-bokeh-customjs-debugging-a-javascript-callback-for-the-taping-tool
 
-    code = """
-    update_form_id(source.data['id'][source.selected.indices[0]]);
+    code = f"""
+    update_form_id_{pageref}(source.data['id'][source.selected.indices[0]]);
     """
 
     tap = p.select(type=TapTool)

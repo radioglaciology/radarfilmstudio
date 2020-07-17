@@ -1,6 +1,6 @@
 <div class="box">
 
-    <div id="history-load-overlay" class="loader-wrapper">
+    <div id="history-load-overlay-{{ pageref }}" class="loader-wrapper">
         <div class="loader is-loading"></div>
     </div>
 
@@ -10,7 +10,7 @@
         <p>
             You can expand each revision to see what changes were made in that update.
             Revisions may be attributed to human users (indicated by a user email address),
-            imported data sources (i.e. most fields are initally populated from
+            imported data sources (i.e. most fields are initially populated from
             <span class='tag'>fixed8.csv</span>), or by scripts run on the data. Note that
             this view is only available to users with permission to edit the database.
         </p>
@@ -20,18 +20,18 @@
         </p>
     </div>
 
-    <div id="history" class="container">
+    <div id="history-{{ pageref }}" class="container">
     </div>
 
 </div>
 
 <script type='text/javascript'>
-    function update_history_id(id) {
+    function update_history_id_{{ pageref }}(id) {
         console.log("Fetching history for " + id)
-        $('#history-load-overlay').addClass('loader-is-active');
-        $('#history').html("");
+        $('#history-load-overlay-{{ pageref }}').addClass('loader-is-active');
+        $('#history-{{ pageref }}').html("");
 
-        current_id = id;
+        current_id_{{ pageref }} = id;
         $.getJSON( "/api/segments/"+id+"/history", function( data ) {
             $.each(data.history, function(key, val) {
                 var changes_html = ""
@@ -45,16 +45,16 @@
                 });
 
                 if (('updated_by' in val) && ('last_changed' in val)) {
-                    $('#history').append(
+                    $('#history-{{ pageref }}').append(
                         "<details><summary>Revision " + key + " by " +
                         "<span class='tag'>" + val['updated_by'][1] + "</span>" +
                         " on " + val['last_changed'][1] + "</summary>" +
                         "<div class='content'><ul>" + changes_html +
-                        "<br /><a class='button is-primary' onclick='update_form_id(current_id, "+key+");'>Load this revision</a></ul></div></details>");
+                        "<br /><a class='button is-primary' onclick='update_form_id_{{ pageref }}(current_id_{{ pageref }}, "+key+");'>Load this revision</a></ul></div></details>");
                 }
             })
         });
 
-        $('#history-load-overlay').removeClass('loader-is-active');
+        $('#history-load-overlay-{{ pageref }}').removeClass('loader-is-active');
     }
 </script>

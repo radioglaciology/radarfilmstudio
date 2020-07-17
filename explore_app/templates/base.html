@@ -19,11 +19,38 @@
     <script src="/static/wheelzoom/wheelzoom.js"></script>
     <script src="/static/iv-viewer/iv-viewer.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/css-toggle-switch/latest/toggle-switch.css" rel="stylesheet" />
+
     <link rel="stylesheet" type="text/css" href="/static/iv-viewer/iv-viewer.min.css">
 
     <link rel="stylesheet" type="text/css" href="/static/style.css">
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <script type="text/javascript">
+        var seg_view_callbacks = $.Callbacks();
+
+        $( document ).ready(function() {
+            if (Cookies.get('seg-view')) {
+                var mode = Cookies.get('seg-view');
+                seg_view_callbacks.fire(mode);
+                if (mode == 'zoom') {
+                    $("#seg-view-zoom").prop("checked", true).trigger("click");
+                } else if (mode == 'scroll') {
+                    $("#seg-view-scroll").prop("checked", true).trigger("click");
+                } else if (mode == 'startend') {
+                    $("#seg-view-startend").prop("checked", true).trigger("click");
+                }
+            }
+        })
+
+        function update_seg_view_cookie(mode) {
+            Cookies.set('seg-view', mode, {'samesite': 'strict'});
+            seg_view_callbacks.fire(mode);
+        }
+    </script>
 
     {% block header_extra %}{% endblock %}
 
@@ -57,6 +84,24 @@
         </div>
 
         <div class="navbar-end">
+
+            <div class="navbar-item" {% if not (show_view_toggle|default(false, true)) %}style="visibility: hidden;"{% endif %}>
+                Film Display: &nbsp;
+                <fieldset id="seg-view-fieldset">
+                    <div class="switch-toggle switch-holo" style="width: 260px;">
+                        <input id="seg-view-zoom" name="seg-view" type="radio" checked>
+                        <label for="seg-view-zoom" onclick="update_seg_view_cookie('zoom')">Zoom</label>
+
+                        <input id="seg-view-scroll" name="seg-view" type="radio">
+                        <label for="seg-view-scroll" onclick="update_seg_view_cookie('scroll')">Scroll</label>
+
+                        <input id="seg-view-startend" name="seg-view" type="radio">
+                        <label for="seg-view-startend" onclick="update_seg_view_cookie('startend')">Start/End</label>
+
+                        <a></a>
+                    </div>
+                </fieldset>
+            </div>
             {% if current_user.is_authenticated %}
                 <div class="navbar-item">
                     <p>Hi, {{ current_user.first_name }}!</p>

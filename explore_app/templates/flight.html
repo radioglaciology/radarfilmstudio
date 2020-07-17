@@ -25,5 +25,9 @@
             {%  include "history.html" %}
         </div>
     {% endif %}
+    {% if segment_id is not none %}
+        <script type="text/javascript">update_form_id_{{ pageref }}({{ segment_id }})</script>
+    {% endif %}
+
 </section>
 {% endblock %}

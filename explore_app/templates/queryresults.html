@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Segment Query Results{% endblock %}
+
+{% block content %}
+<section class="section">
+    {% for seg in segments %}
+        {% set pageref = loop.index %}
+        <div class="container">
+            <h2 class="subtitle">Film Segment {{ seg.id }} from Flight {{ seg.flight }}</h2>
+        </div>
+        <div class="container">
+            {%  include "update.html" %}
+        </div>
+        {% if (current_user.is_authenticated and current_user.write_permission) %}
+            <div class="container">
+                {%  include "history.html" %}
+            </div>
+        {% endif %}
+        <script type="text/javascript">update_form_id_{{ pageref }}({{ seg.id }})</script>
+    {% endfor %}
+</section>
+{% endblock %}

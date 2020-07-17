@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, url_for, g, redirect
+from flask import Blueprint, render_template, url_for, g, redirect, request
 
 from flask import current_app as app
 from .. import db, cache, scheduler
@@ -44,8 +44,40 @@ def flight_page(flight_id):
 
     map, cbd = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
 
-    return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd,
+    # Check for a direct link to a specific segment to be loaded
+    if 'id' in request.args:
+        segment_id = int(request.args['id'])
+    else:
+        segment_id = None
+
+    return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd, segment_id=segment_id,
+                           pageref=0, show_view_toggle=True,
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
+
+
+@main_bp.route('/query')
+def query_results():
+    ### TODO TODO TODO
+    query = FilmSegment.query
+
+    if request.args.get('flight'):
+        query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
+
+    if request.args.get('verified'):
+        if int(request.args.get('verified')) == 0:
+            query = query.filter(FilmSegment.is_verified == False)
+        elif int(request.args.get('verified')) == 1:
+            query = query.filter(FilmSegment.is_verified == True)
+
+    if request.args.get('n'):
+        query = query.limit(int(request.args.get('n')))
+    else:
+        query = query.limit(10)
+
+    segs = query.all()
+    return render_template("queryresults.html", segments=segs, show_view_toggle=True,
+                           breadcrumbs=[('Explorer', '/'), ('Query Results', url_for('main_bp.query_results'))])
+
 
 @main_bp.route('/update_form/<int:id>/')
 def update_page(id):

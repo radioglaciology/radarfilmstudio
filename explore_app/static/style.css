@@ -8,9 +8,24 @@ a.disabled { /* Disable links */
   cursor: default;
 }
 
-#flight-radargram {
+.flight-radargram {
     height: 250px;
     width: 100%;
+}
+
+.horizontal-scroll-wrapper {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  height: 100%;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.horizontal-scroll-wrapper img {
+  display: inline-block;
+  vertical-align: top;
+  max-height: 100%;
+  max-width: 100000px;
 }
 
 /* CSS tooltips from: https://www.w3schools.com/css/css_tooltip.asp */

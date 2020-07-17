@@ -156,7 +156,9 @@ def serve_pil_image(pil_img):
 @api_bp.route('/api/radargram/jpg/<int:id>')
 @api_bp.route('/api/radargram/jpg/<int:id>.jpg')
 @api_bp.route('/api/radargram/jpg/<int:id>/h/<int:max_height>')
-def radargram_jpg(id, max_height = None):
+@api_bp.route('/api/radargram/jpg/<int:id>/crop/first/<int:crop_w_start>')
+@api_bp.route('/api/radargram/jpg/<int:id>/crop/last/<int:crop_w_end>')
+def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None):
     seg = FilmSegment.query.get(id)
     pre, ext = os.path.splitext(seg.path)
     filename = pre + "_lowqual.jpg"
@@ -168,6 +170,12 @@ def radargram_jpg(id, max_height = None):
         else:
             scale = max_height / im.height
             return serve_pil_image(im.resize((int(im.width*scale), int(im.height*scale))))
+    elif crop_w_start:
+        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        return serve_pil_image(im.crop(box=(0, 0, crop_w_start, im.size[1])))
+    elif crop_w_end:
+        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        return serve_pil_image(im.crop(box=(im.size[0]-crop_w_end, 0, im.size[0], im.size[1])))
     else:
         return send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
 
