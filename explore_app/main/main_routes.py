@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, url_for, g, redirect, request
+from flask import Blueprint, render_template, url_for, g, redirect, request, send_from_directory, abort
 
 from flask import current_app as app
 from .. import db, cache, scheduler
+
+from flask_login import current_user
 
 from .map import make_bokeh_map, load_flight_lines
 from .flight_plots import make_cbd_plot, make_linked_flight_plots
@@ -9,12 +11,18 @@ from .stats_plots import make_flight_progress_bar_plot
 from explore_app.film_segment import FilmSegment
 from .stats_plots import update_flight_progress_stats
 
+from ..api.api_routes import has_write_permission
+
 from sqlalchemy import and_, or_
 
 import time
 import math
 from collections import OrderedDict
-from copy import copy
+import uuid
+import os
+from PIL import Image, ImageOps
+from datetime import datetime
+
 
 main_bp = Blueprint('main_bp', __name__,
                     template_folder='templates',
@@ -24,6 +32,9 @@ flight_lines = load_flight_lines(app.config['FLIGHT_POSITIONING_DIR'])
 all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines)
 
 flight_progress_stats_updated = None
+
+query_cache = {}
+images_cache = {}
 
 @main_bp.before_app_first_request
 def before_app_first_request():
@@ -56,6 +67,115 @@ def flight_page(flight_id):
     return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd, segment_id=segment_id,
                            pageref=0, show_view_toggle=True,
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
+
+@main_bp.route('/query/action', methods=["POST"])
+def query_bulk_action():
+    t = time.time()
+    if not has_write_permission(current_user):
+        return "You're not logged in or don't have the appropriate permissions."
+
+    qid = request.form['query_id']
+    action_type = request.form['action_type']
+    scope = request.form['scope']
+    if not qid or (not (qid in query_cache)):
+        return "No query id specified or query id invalid. If you've had this page open more than an hour, your query "\
+               "may have expired. "
+    if not action_type:
+        return "No action specified"
+    if not scope:
+        return "No scope specified"
+
+    query_log = query_cache[qid]
+
+    if scope == 'page':
+        query_ids = query_log['page_query']
+    elif scope == 'query':
+        query_ids = query_log['full_query']
+    else:
+        return "Invalid scope specified"
+
+    query = FilmSegment.query.filter(FilmSegment.id.in_(query_ids))
+
+    if action_type == 'mark_verified':
+        for f in query.all():
+            f.is_verified = True
+            f.updated_by = current_user.email
+            f.last_changed = datetime.now()
+        db.session.commit()
+    elif action_type == 'set_60mhz':
+        for f in query.all():
+            f.instrument_type = 10
+            f.updated_by = current_user.email
+            f.last_changed = datetime.now()
+        db.session.commit()
+    elif action_type == 'set_300mhz':
+        for f in query.all():
+            f.instrument_type = 20
+            f.updated_by = current_user.email
+            f.last_changed = datetime.now()
+        db.session.commit()
+    elif action_type == 'stitch':
+        image_type = request.form.get('format', 'jpg')
+        scale_x = float(request.form.get('scale_x', 1))
+        scale_y = float(request.form.get('scale_y', 1))
+        flip = request.form.get('flip', "")
+
+        if query.count() > 10 and image_type != 'jpg':
+            return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
+
+        images = []  # TODO: This needs to move to a separate thread!
+        sum_x = 0
+        for f in query.all():
+            img_path = f.path
+            if image_type == 'jpg':
+                pre, ext = os.path.splitext(img_path)
+                img_path = pre + "_lowqual.jpg"
+                filename_out = f"stitch-{qid}.jpg"
+            else: # otherwise assume TIFF
+                filename_out = f"stitch-{qid}.tiff"
+
+            im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], img_path))
+            if flip == 'x':
+                im = ImageOps.mirror(im)
+
+            if (scale_x != 1) or (scale_y != 1):
+                if image_type == 'jpg':
+                    im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
+                else:
+                    im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
+
+            images.append(im)
+            sum_x += im.width
+
+        im_output = Image.new(images[0].mode, (sum_x, images[0].height))
+
+        x = 0
+        for im in images:
+            im_output.paste(im, (x, 0))
+            x += im.width
+
+        if flip == 'x':
+            im_output = ImageOps.mirror(im_output)
+
+        im_output.save(os.path.join(app.config['TMP_OUTPUTS_DIR'], filename_out))
+
+        images_cache[qid] = {
+            'filename': filename_out,
+            'timestamp': time.time()
+        }
+    else:
+        return "Unknown action type"
+
+    print(f"Request type [{action_type}] took {time.time() - t} seconds to process")
+    return "success"
+
+
+@main_bp.route('/outputs/<query_id>')
+def get_output_image(query_id):
+    if query_id in images_cache:
+        return send_from_directory(app.config['TMP_OUTPUTS_DIR'], images_cache[query_id]['filename'], as_attachment=True)
+    else:
+        return abort(404)
 
 
 @main_bp.route('/query')
@@ -115,7 +235,16 @@ def query_results():
     else:
         current_page = 1
 
-    query = query.limit(n)
+    query_page = query.limit(n)  # Just this page
+
+    # Record this query (temporarily)
+
+    query_log = {'full_query': [x.id for x in query.all()],
+                 'page_query': [x.id for x in query_page.all()],
+                 'timestamp': time.time()}
+
+    qid = str(uuid.uuid4())
+    query_cache[qid] = query_log
 
     # Display options
 
@@ -144,10 +273,10 @@ def query_results():
 
     # Return results
 
-    segs = query.all()
+    segs = query_page.all()
     return render_template("queryresults.html", segments=segs, show_view_toggle=True, show_history=show_history,
                            n_total_results=n_total_results, n_pages=n_pages, current_page=current_page,
-                           next_page=next_page, prev_page=prev_page, page_map=pages,
+                           next_page=next_page, prev_page=prev_page, page_map=pages, query_id=qid,
                            breadcrumbs=[('Explorer', '/'), ('Query Results', url_for('main_bp.query_results'))])
 
 
@@ -193,6 +322,19 @@ def update_stats():
         update_flight_progress_stats(db.session)
         global flight_progress_stats_updated
         flight_progress_stats_updated = time.time()
+
+@scheduler.task('interval', id='clear_query_cache', seconds=(2*60))
+def clear_query_cache():
+    with db.app.app_context():
+        for k in list(query_cache):
+            if time.time() - query_cache[k]['timestamp'] > (60*60):
+                query_cache.pop(k, None)
+        for k in list(images_cache):
+            if time.time() - images_cache[k]['timestamp'] > (2*60):
+                old_file = os.path.join(app.config['TMP_OUTPUTS_DIR'], images_cache[k]['filename'])
+                print(f"Deleting {old_file}")
+                os.remove(old_file)
+                images_cache.pop(k, None)
 
 # Page load time logic
 

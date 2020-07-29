@@ -58,6 +58,7 @@
                                         <option value="">Any</option>
                                         <option value="a" {% if request.args.get('scope') == 'a' %}selected="selected"{% endif %}>A Scope</option>
                                         <option value="z" {% if request.args.get('scope') == 'z' %}selected="selected"{% endif %}>Z Scope</option>
+                                        <option value="esm" {% if request.args.get('scope') == 'esm' %}selected="selected"{% endif %}>ESM</option>
                                     </select>
                                 </div>
                             </div>
@@ -202,7 +203,6 @@
         <div class="notification">
             Your query returned {{ n_total_results }} results. This is page {{ current_page }} of {{ n_pages }}.
             You can apply actions in bulk to all results at the <a href="#actions">bottom of this page</a>.
-            (Actually, you can't yet. But you will be able to soon!)
         </div>
     </div>
     <div class="container">
@@ -232,11 +232,105 @@
     <div class="container">
         <a name="actions"></a>
         {% if (current_user.is_authenticated and current_user.write_permission) %}
-            <div class="notification is-primary">
-                Hey there! These buttons don't do anything yet. I'm still working on this part, but I wanted to put out
-                a preview of what I think it'll look like to get feedback before everything is done.
+            <h2 class="subtitle">Process all results of this query...</h2>
+            <div class="notification">
+                Actions applied here will affect all <strong>{{ n_total_results }} film segments</strong> selected by
+                this query -- not just the ones on this page. These actions do not change the film segments themselves.
+                They only produce temporary outputs you may download.
             </div>
-            <h2 class="subtitle">Apply to this page...</h2>
+
+            <div class="box">
+                <form id="stitch-form">
+                    <input type="hidden" name="query_id" value="{{ query_id }}" />
+                    <input type="hidden" name="scope" value="query" />
+                    <input type="hidden" name="action_type" value="stitch" />
+
+                    <nav class="level">
+
+                        <div class="level-left">
+                            <div class="level-item">
+                                <div class="field">
+                                    <label class="label">
+                                        Format
+                                        <div class="tooltip">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span class="tooltiptext">Select the image output format and quality desired</span>
+                                        </div>
+                                    </label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select name="format">
+                                                <option value="jpg">JPG (low quality, fast)</option>
+                                                <option value="tiff">TIFF (high quality, slow)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="level-item">
+                                <div class="field">
+                                    <label class="label">
+                                        Flip images
+                                        <div class="tooltip">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span class="tooltiptext">If CBD numbers are decreasing in the images, flip horizontally to correct this in the stitched image</span>
+                                        </div>
+                                    </label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select name="flip">
+                                                <option value="">Don't change orientation</option>
+                                                <option value="x">Flip images horizontally</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="level-item">
+                                <div class="field">
+                                    <label class="label">
+                                        Re-scale in X
+                                        <div class="tooltip">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span class="tooltiptext">Stretch or shrink the output image in X by this ratio</span>
+                                        </div>
+                                    </label>
+                                    <div class="control">
+                                        <input class="input" name="scale_x" type="number" value="1.0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="level-item">
+                                <div class="field">
+                                    <label class="label">
+                                        Re-scale in Y
+                                        <div class="tooltip">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span class="tooltiptext">Stretch or shrink the output image in Y by this ratio</span>
+                                        </div>
+                                    </label>
+                                    <div class="control">
+                                        <input class="input" name="scale_y" type="number" value="1.0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="level-right" style="margin-top: auto;">
+                            <div class="level-item">
+                                <div class="field">
+                                    <div class="control">
+                                        <button class="button is-primary" id="stitch-button">Stitch into single image</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </nav>
+                </form>
+            </div>
+
+            <h2 class="subtitle">Make changes to film segments shown on this page...</h2>
             <div class="notification">
                 Actions applied here will affect all film segments shown on this page.
             </div>
@@ -246,20 +340,20 @@
                     <div class="level-item">
                         <div class="field is-grouped">
                             <div class="control">
-                                <button class="button is-link" disabled>Mark all verified</button>
+                                <button class="button is-link" onclick="bulk_action('page', 'mark_verified')">Mark all verified</button>
                             </div>
                             <div class="control">
-                                <button class="button is-link" disabled>Set Frequency to 60 MHz</button>
+                                <button class="button is-link" onclick="bulk_action('page', 'set_60mhz')">Set Frequency to 60 MHz</button>
                             </div>
                             <div class="control">
-                                <button class="button is-link" disabled>Set Frequency to 300 MHz</button>
+                                <button class="button is-link" onclick="bulk_action('page', 'set_300mhz')">Set Frequency to 300 MHz</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            <h2 class="subtitle">Apply to all query results...</h2>
+            <h2 class="subtitle">Make changes to all query results...</h2>
             <div class="notification is-warning">
                 <div class="control"><label class="checkbox">
                     <input type="checkbox" id="all-query-agreement">
@@ -273,28 +367,83 @@
                     <div class="level-item">
                         <div class="field is-grouped">
                             <div class="control">
-                                <button class="button is-link" disabled>Mark all verified</button>
+                                <button
+                                        class="button is-danger bulk-danger"
+                                        onclick="bulk_action('query', 'mark_verified')"
+                                        disabled
+                                >Mark all verified
+                                </button>
                             </div>
                             <div class="control">
-                                <button class="button is-link" disabled>Set Frequency to 60 MHz</button>
+                                <button
+                                        class="button is-danger bulk-danger"
+                                        onclick="bulk_action('query', 'set_60mhz')"
+                                        disabled
+                                >Set frequency to 60 MHz
+                                </button>
                             </div>
                             <div class="control">
-                                <button class="button is-link" disabled>Set Frequency to 300 MHz</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="level-right">
-                    <div class="level-item">
-                        <div class="field is-grouped">
-                            <div class="control">
-                                <button class="button is-link" disabled>Stitch into single image</button>
+                                <button
+                                        class="button is-danger bulk-danger"
+                                        onclick="bulk_action('query', 'set_300mhz')"
+                                        disabled
+                                >Set frequency to 300 MHz
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </nav>
+            <script type="text/javascript">
+                function bulk_action(scope, action_type) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/query/action",
+                        data: {'query_id': '{{ query_id }}', 'action_type': action_type, 'scope': scope},
+                        success: function(res) {
+                            if (res === 'success') {
+                                $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> Action successful!");
+                            } else {
+                                $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
+                            }
+                            $("#bulk-action-modal-btn").removeAttr("disabled");
+                        }
+                    });
+                    $("#bulk-action-modal").addClass("is-active");
+                }
+
+                $("#stitch-button").click(function(event){
+                    event.preventDefault();
+                    $.ajax({
+                        type: "POST",
+                        url: "/query/action",
+                        data: $("#stitch-form").serialize(),
+                        success: function(res) {
+                            if (res === 'success') {
+                                $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> Success! <a href='/outputs/{{ query_id }}' download>Download your image here.</a>");
+                                $("#bulk-action-modal-btn").hide();
+                                $("#bulk-action-modal-btn-close").show();
+                            } else {
+                                $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
+                            }
+                            $("#bulk-action-modal-btn").removeAttr("disabled");
+                        }
+                    });
+                    $("#bulk-action-modal").addClass("is-active");
+                });
+
+                function reset_modal(){
+                    $("#bulk-action-modal").removeClass("is-active");
+                    $("#bulk-action-modal-btn").show();
+                    $("#bulk-action-modal-btn").attr("disabled", true);
+                    $("#bulk-action-modal-btn-close").hide();
+                    $('#bulk-action-modal-text').html("<i class='fas fa-spinner fa-spin'></i>");
+                }
+
+                $("#all-query-agreement").click(function() {
+                    $(".bulk-danger").prop('disabled', ! this.checked);
+                });
+            </script>
         {% else %}
             <div class="notification">
                 You must be logged in and have appropriate permissions to use bulk processing tools.
@@ -302,4 +451,20 @@
         {% endif %}
     </div>
 </section>
+<div class="modal" id="bulk-action-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content"><div class="box">
+        <div class="box">
+            <span id="bulk-action-modal-text"><i class='fas fa-spinner fa-spin'></i></span>
+        </div>
+        <div class="section">
+            <div class="control is-pulled-right">
+                <button class="button is-link" onclick="location.reload();" id="bulk-action-modal-btn" disabled>Refresh Query</button>
+            </div>
+            <div class="control is-pulled-right">
+                <button class="button is-link" onclick='reset_modal()' id="bulk-action-modal-btn-close" style="display: none;">Close</button>
+            </div>
+        </div>
+    </div></div>
+</div>
 {% endblock %}
