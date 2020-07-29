@@ -61,6 +61,7 @@
         <form id="update-{{ pageref }}">
             <nav class="level">
                 <input type="hidden" value="-1" id="update_segment_id-{{ pageref }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="level-item">
                     <fieldset disabled>
                         <div class="field">

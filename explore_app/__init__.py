@@ -49,8 +49,6 @@ def create_app():
         from explore_app.api import api_routes
         from explore_app.api.api_routes import FilmSegmentResource
 
-        csrf.exempt(api_routes.api_bp)
-
         app.register_blueprint(main_routes.main_bp)
         app.register_blueprint(auth_routes.auth_bp)
         app.register_blueprint(api_routes.api_bp)
