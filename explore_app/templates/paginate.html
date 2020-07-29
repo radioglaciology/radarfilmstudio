@@ -1,0 +1,18 @@
+<nav class="pagination is-small" role="navigation" aria-label="pagination">
+    <a class="pagination-previous" {% if prev_page <= 0 %} disabled {% else %} href="{{ page_map[prev_page] }}"{% endif %}>Previous Page</a>
+    <a class="pagination-next" {% if next_page <= 0 %} disabled {% else %} href="{{ page_map[next_page] }}"{% endif %}>Next Page</a>
+    <ul class="pagination-list">
+        {% set vars = namespace(last_page = 0) %}
+        {% for pg in page_map %}
+            {% if vars.last_page < (pg - 1) %}
+                <li>
+                    <span class="pagination-ellipsis">&hellip;</span>
+                </li>
+            {% endif %}
+            <li>
+                <a class="pagination-link {% if pg == current_page %}is-current{% endif %}" href="{{ page_map[pg] }}" aria-label="Goto page {{ pg }}">{{ pg }}</a>
+            </li>
+            {% set vars.last_page = pg %}
+        {% endfor %}
+    </ul>
+</nav>

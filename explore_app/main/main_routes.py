@@ -12,6 +12,9 @@ from .stats_plots import update_flight_progress_stats
 from sqlalchemy import and_, or_
 
 import time
+import math
+from collections import OrderedDict
+from copy import copy
 
 main_bp = Blueprint('main_bp', __name__,
                     template_folder='templates',
@@ -57,8 +60,9 @@ def flight_page(flight_id):
 
 @main_bp.route('/query')
 def query_results():
-    ### TODO TODO TODO
     query = FilmSegment.query
+
+    # Filters
 
     if request.args.get('flight'):
         query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
@@ -69,13 +73,81 @@ def query_results():
         elif int(request.args.get('verified')) == 1:
             query = query.filter(FilmSegment.is_verified == True)
 
+    if request.args.get('scope'):
+        query = query.filter(FilmSegment.scope_type == request.args.get('scope'))
+
+    if request.args.get('mincbd'):
+        query = query.filter(FilmSegment.first_cbd >= int(request.args.get('mincbd')))
+
+    if request.args.get('maxcbd'):
+        query = query.filter(FilmSegment.first_cbd <= int(request.args.get('maxcbd')))
+
+    if request.args.get('minframe'):
+        query = query.filter(FilmSegment.first_frame >= int(request.args.get('minframe')))
+
+    if request.args.get('maxframe'):
+        query = query.filter(FilmSegment.first_frame <= int(request.args.get('maxframe')))
+
+    # Sorting
+
+    if request.args.get('sort'):
+        if request.args.get('sort') == 'cbd':
+            query = query.order_by(FilmSegment.first_cbd)
+        elif request.args.get('sort') == 'frame':
+            query = query.order_by(FilmSegment.first_frame)
+
+    # Number and page of results
+
     if request.args.get('n'):
-        query = query.limit(int(request.args.get('n')))
+        n = int(request.args.get('n'))
     else:
-        query = query.limit(10)
+        n = 10
+
+    if request.args.get('skip'):
+        query.offset(int(request.args.get('skip')))
+
+    n_total_results = query.count()
+    n_pages = math.ceil(n_total_results / n)
+
+    if request.args.get('page'):
+        current_page = int(request.args.get('page'))
+        query = query.offset((current_page-1) * n)
+    else:
+        current_page = 1
+
+    query = query.limit(n)
+
+    # Display options
+
+    if request.args.get('history') and int(request.args.get('history')) == 0:
+        show_history = 0
+    else:
+        show_history = 1
+
+    # Figure out pagination
+
+    # All the page links should repeat all the GET arguments except the page
+    base_args = {k: v for k,v in request.args.items() if k != 'page'}
+
+    # Create an ordered dictionary of page numbers to links to the appropriate query
+    pages = OrderedDict()
+    # Our convention here is to display links to the first page, the the last page, and the pages before/after the current
+    for pg in [1, current_page-1, current_page, current_page+1, n_pages]:
+        if (pg > 0) and (pg <= n_pages) and (not (pg in pages)):  # Sometimes this list may overlap - don't repeat any pages
+            pages[pg] = url_for('main_bp.query_results', page=pg, **base_args)
+
+    prev_page = current_page - 1 # A value of 0 indicates no previous page
+    if current_page < n_pages:
+        next_page = current_page + 1
+    else:
+        next_page = 0
+
+    # Return results
 
     segs = query.all()
-    return render_template("queryresults.html", segments=segs, show_view_toggle=True,
+    return render_template("queryresults.html", segments=segs, show_view_toggle=True, show_history=show_history,
+                           n_total_results=n_total_results, n_pages=n_pages, current_page=current_page,
+                           next_page=next_page, prev_page=prev_page, page_map=pages,
                            breadcrumbs=[('Explorer', '/'), ('Query Results', url_for('main_bp.query_results'))])
 
 

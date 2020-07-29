@@ -4,6 +4,210 @@
 
 {% block content %}
 <section class="section">
+    <div class="container">
+        <form method="get">
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Flight
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Enter a flight ID to filter by flight. Leave blank for all flights.</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="flight" type="text"
+                                       value="{% if request.args.get('flight') %}{{ request.args.get('flight') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Verification
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Filter by segments that are verified or unverified</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <div class="select">
+                                    <select name="verified">
+                                        <option value="">Any</option>
+                                        <option value="1" {% if request.args.get('verified') == "1" %}selected="selected"{% endif %}>Only Verified</option>
+                                        <option value="0" {% if request.args.get('verified') == "0" %}selected="selected"{% endif %}>Only Unverified</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Scope Type
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Filter by segments of a particular type</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <div class="select">
+                                    <select name="scope">
+                                        <option value="">Any</option>
+                                        <option value="a" {% if request.args.get('scope') == 'a' %}selected="selected"{% endif %}>A Scope</option>
+                                        <option value="z" {% if request.args.get('scope') == 'z' %}selected="selected"{% endif %}>Z Scope</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Minimum first CBD
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show only segments with at least this first CBD number (leave blank to not use)</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="mincbd" type="number"
+                                       value="{% if request.args.get('mincbd') %}{{ request.args.get('mincbd') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Maximum first CBD
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show only segments with a first CBD less than or equal to this number (leave blank to not use)</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="maxcbd" type="number"
+                                       value="{% if request.args.get('maxcbd') %}{{ request.args.get('maxcbd') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Minimum first frame
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show only segments with at least this first frame number (leave blank to not use)</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="minframe" type="number"
+                                       value="{% if request.args.get('minframe') %}{{ request.args.get('minframe') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Maximum first frame
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show only segments with a first frame less than or equal to this number (leave blank to not use)</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="maxframe" type="number"
+                                       value="{% if request.args.get('maxframe') %}{{ request.args.get('maxframe') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Sort By
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Sort segments in ascending order by this parameter</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <div class="select">
+                                    <select name="sort">
+                                        <option value="cbd" {% if request.args.get('sort') == 'cbd' %}selected="selected"{% endif %}>CBD</option>
+                                        <option value="frame" {% if request.args.get('sort') == 'frame' %}selected="selected"{% endif %}>Frame</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Results per page
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show this many results per page</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="n" type="number"
+                                       value="{% if request.args.get('n') %}{{ request.args.get('n') }}{% else %}10{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Show History
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Show or hide revision history for each film segment
+                                    (Note: you must be logged in and have permissions to see history.)</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <div class="select">
+                                    <select name="history">
+                                        <option value="1" {% if request.args.get('history') == '1' %}selected="selected"{% endif %}>Show History</option>
+                                        <option value="0" {% if request.args.get('history') == '0' %}selected="selected"{% endif %}>Hide History</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <nav class="level">
+                <div class="level-right">
+                    <div class="level-item">
+                        <div class="control"><input class="button is-primary" type="submit" value="Submit Query" /></div>
+                    </div>
+                </div>
+            </nav>
+        </form>
+    </div>
+</section>
+<section class="section">
+    <div class="container">
+        <div class="notification">
+            Your query returned {{ n_total_results }} results. This is page {{ current_page }} of {{ n_pages }}.
+            You can apply actions in bulk to all results at the <a href="#actions">bottom of this page</a>.
+            (Actually, you can't yet. But you will be able to soon!)
+        </div>
+    </div>
+    <div class="container">
+        {% include "paginate.html" %}
+    </div>
     {% for seg in segments %}
         {% set pageref = loop.index %}
         <div class="container">
@@ -12,12 +216,90 @@
         <div class="container">
             {%  include "update.html" %}
         </div>
-        {% if (current_user.is_authenticated and current_user.write_permission) %}
+        {% if (current_user.is_authenticated and current_user.write_permission and show_history) %}
             <div class="container">
                 {%  include "history.html" %}
             </div>
         {% endif %}
         <script type="text/javascript">update_form_id_{{ pageref }}({{ seg.id }})</script>
     {% endfor %}
+    <div class="container">
+        {% include "paginate.html" %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <a name="actions"></a>
+        {% if (current_user.is_authenticated and current_user.write_permission) %}
+            <div class="notification is-primary">
+                Hey there! These buttons don't do anything yet. I'm still working on this part, but I wanted to put out
+                a preview of what I think it'll look like to get feedback before everything is done.
+            </div>
+            <h2 class="subtitle">Apply to this page...</h2>
+            <div class="notification">
+                Actions applied here will affect all film segments shown on this page.
+            </div>
+
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-link" disabled>Mark all verified</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" disabled>Set Frequency to 60 MHz</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" disabled>Set Frequency to 300 MHz</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <h2 class="subtitle">Apply to all query results...</h2>
+            <div class="notification is-warning">
+                <div class="control"><label class="checkbox">
+                    <input type="checkbox" id="all-query-agreement">
+                    I understand that actions applied here will affect all <strong>{{ n_total_results }} film
+                    segments</strong> selected by this query -- not just the ones on this page. Be careful!
+                </label></div>
+            </div>
+
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-link" disabled>Mark all verified</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" disabled>Set Frequency to 60 MHz</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" disabled>Set Frequency to 300 MHz</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="level-right">
+                    <div class="level-item">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-link" disabled>Stitch into single image</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        {% else %}
+            <div class="notification">
+                You must be logged in and have appropriate permissions to use bulk processing tools.
+            </div>
+        {% endif %}
+    </div>
 </section>
 {% endblock %}
