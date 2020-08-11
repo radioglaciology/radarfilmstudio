@@ -2,8 +2,9 @@ import os
 from io import BytesIO
 from PIL import Image
 from datetime import datetime
+import requests
 
-from flask import Blueprint, request, send_file, send_from_directory
+from flask import Blueprint, request, send_file, send_from_directory, redirect
 from flask_restful import Api, Resource
 from flask_login import current_user
 from sqlalchemy_continuum.utils import count_versions
@@ -153,6 +154,19 @@ def serve_pil_image(pil_img):
     img_io.seek(0)
     return send_file(img_io, mimetype='image/jpeg')
 
+def serve_unmodified_image(filename):
+    if "https://" in app.config['FILM_IMAGES_DIR']:
+        return redirect(app.config['FILM_IMAGES_DIR'] + filename)
+    else:
+        send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
+
+def load_image(filename):
+    if "https://" in app.config['FILM_IMAGES_DIR']:
+        response = requests.get(app.config['FILM_IMAGES_DIR'] + filename)
+        return Image.open(BytesIO(response.content))
+    else:
+        return Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+
 @api_bp.route('/api/radargram/jpg/<int:id>')
 @api_bp.route('/api/radargram/jpg/<int:id>.jpg')
 @api_bp.route('/api/radargram/jpg/<int:id>/h/<int:max_height>')
@@ -164,23 +178,23 @@ def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None)
     filename = pre + "_lowqual.jpg"
 
     if max_height:
-        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        im = load_image(filename)
         if max_height >= im.height:
-            return send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
+            return serve_unmodified_image(filename)
         else:
             scale = max_height / im.height
             return serve_pil_image(im.resize((int(im.width*scale), int(im.height*scale))))
     elif crop_w_start:
-        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        im = load_image(filename)
         return serve_pil_image(im.crop(box=(0, 0, crop_w_start, im.size[1])))
     elif crop_w_end:
-        im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        im = load_image(filename)
         return serve_pil_image(im.crop(box=(im.size[0]-crop_w_end, 0, im.size[0], im.size[1])))
     else:
-        return send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
+        return serve_unmodified_image(filename)
 
 @api_bp.route('/api/radargram/tiff/<int:id>')
 @api_bp.route('/api/radargram/tiff/<int:id>.tiff')
 def radargram_tiff(id):
     seg = FilmSegment.query.get(id)
-    return send_from_directory(app.config['FILM_IMAGES_DIR'], seg.path)
+    return serve_unmodified_image(seg.path)

@@ -261,7 +261,9 @@
                                         <div class="select">
                                             <select name="format">
                                                 <option value="jpg">JPG (low quality, fast)</option>
-                                                <option value="tiff">TIFF (high quality, slow)</option>
+                                                {% if enable_tiff == 1 %}
+                                                    <option value="tiff">TIFF (high quality, slow)</option>
+                                                {% endif %}
                                             </select>
                                         </div>
                                     </div>

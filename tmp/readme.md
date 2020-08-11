@@ -1,0 +1,1 @@
+Temporary outputs are stored here. This folder needs to exist in the `git` repo for deployment.

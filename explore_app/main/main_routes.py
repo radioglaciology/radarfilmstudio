@@ -11,7 +11,7 @@ from .stats_plots import make_flight_progress_bar_plot
 from explore_app.film_segment import FilmSegment
 from .stats_plots import update_flight_progress_stats
 
-from ..api.api_routes import has_write_permission
+from ..api.api_routes import has_write_permission, load_image
 
 from sqlalchemy import and_, or_
 
@@ -63,8 +63,10 @@ def flight_page(flight_id):
     else:
         segment_id = None
 
+    print(app.config['ENABLE_TIFF'])
+
     return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd, segment_id=segment_id,
-                           pageref=0, show_view_toggle=True,
+                           pageref=0, show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
 
 @main_bp.route('/query/action', methods=["POST"])
@@ -135,7 +137,7 @@ def query_bulk_action():
             else: # otherwise assume TIFF
                 filename_out = f"stitch-{qid}.tiff"
 
-            im = Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], img_path))
+            im = load_image(img_path)
             if flip == 'x':
                 im = ImageOps.mirror(im)
 
@@ -173,7 +175,8 @@ def query_bulk_action():
 @main_bp.route('/outputs/<query_id>')
 def get_output_image(query_id):
     if query_id in images_cache:
-        return send_from_directory(app.config['TMP_OUTPUTS_DIR'], images_cache[query_id]['filename'], as_attachment=True)
+        tmp_path = os.path.join(os.getcwd(), app.config['TMP_OUTPUTS_DIR'])
+        return send_from_directory(tmp_path, images_cache[query_id]['filename'], as_attachment=True)
     else:
         return abort(404)
 
@@ -277,13 +280,15 @@ def query_results():
     return render_template("queryresults.html", segments=segs, show_view_toggle=True, show_history=show_history,
                            n_total_results=n_total_results, n_pages=n_pages, current_page=current_page,
                            next_page=next_page, prev_page=prev_page, page_map=pages, query_id=qid,
+                           enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), ('Query Results', url_for('main_bp.query_results'))])
 
 
 @main_bp.route('/update_form/<int:id>/')
 def update_page(id):
     seg = FilmSegment.query.get(id)
-    return render_template("update.html", segment=seg, breadcrumbs=[('Explorer', '/')])
+    return render_template("update.html", segment=seg, enable_tiff=app.config['ENABLE_TIFF'],
+                           breadcrumbs=[('Explorer', '/')])
 
 
 @main_bp.route('/stats/refresh/')

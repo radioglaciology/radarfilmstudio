@@ -1,3 +1,6 @@
 .env
 .idea
 __pycache__
+tmp/*.png
+tmp/*.tiff
+*.db

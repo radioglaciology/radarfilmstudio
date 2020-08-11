@@ -45,6 +45,7 @@ class Config:
     FLIGHT_POSITIONING_DIR = os.environ.get('FLIGHT_POSITIONING_DIR')
     FILM_IMAGES_DIR = os.environ.get('FILM_IMAGES_DIR')
     TMP_OUTPUTS_DIR = os.environ.get('TMP_OUTPUTS_DIR')
+    ENABLE_TIFF = os.environ.get('ENABLE_TIFF')
 
     # APScheduler
     SCHEDULER_API_ENABLED = True
