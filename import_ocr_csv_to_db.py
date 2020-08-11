@@ -11,7 +11,7 @@ from explore_app.film_segment import FilmSegment
 from explore_app.user import User
 
 
-#raise(Exception("Don't run this file unless you're re-creating the database."))
+raise(Exception("Don't run this file unless you're re-creating the database."))
 
 df = pd.read_csv('../fixed8.csv', low_memory=False)
 df = df[df.complete == True]

@@ -1,5 +1,10 @@
 """Flask config class."""
 import os
+from os.path import join, dirname
+from dotenv import load_dotenv
+
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
 class Config:
     """
@@ -19,7 +24,7 @@ class Config:
     SESSION_COOKIE_NAME = 'rg_explore_sess'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///explore.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
 
     CACHE_TYPE = 'simple'
     CACHE_DEFAULT_TIMEOUT = 300

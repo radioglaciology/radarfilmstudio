@@ -23,7 +23,6 @@ import os
 from PIL import Image, ImageOps
 from datetime import datetime
 
-
 main_bp = Blueprint('main_bp', __name__,
                     template_folder='templates',
                     static_folder='static')
@@ -123,6 +122,8 @@ def query_bulk_action():
         if query.count() > 10 and image_type != 'jpg':
             return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
 
+        query = query.order_by(FilmSegment.first_cbd)
+
         images = []  # TODO: This needs to move to a separate thread!
         sum_x = 0
         for f in query.all():
@@ -130,7 +131,7 @@ def query_bulk_action():
             if image_type == 'jpg':
                 pre, ext = os.path.splitext(img_path)
                 img_path = pre + "_lowqual.jpg"
-                filename_out = f"stitch-{qid}.jpg"
+                filename_out = f"stitch-{qid}.png"
             else: # otherwise assume TIFF
                 filename_out = f"stitch-{qid}.tiff"
 
@@ -138,11 +139,10 @@ def query_bulk_action():
             if flip == 'x':
                 im = ImageOps.mirror(im)
 
-            if (scale_x != 1) or (scale_y != 1):
-                if image_type == 'jpg':
-                    im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
-                else:
-                    im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
+            if image_type == 'jpg':
+                im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
+            else:
+                im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
 
             images.append(im)
             sum_x += im.width
@@ -323,7 +323,7 @@ def update_stats():
         global flight_progress_stats_updated
         flight_progress_stats_updated = time.time()
 
-@scheduler.task('interval', id='clear_query_cache', seconds=(2*60))
+@scheduler.task('interval', id='clear_query_cache', seconds=(60*60))
 def clear_query_cache():
     with db.app.app_context():
         for k in list(query_cache):

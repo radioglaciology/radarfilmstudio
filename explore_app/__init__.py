@@ -10,6 +10,8 @@ from flask_continuum import Continuum
 from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
 
+import os
+
 # Globally accessible plugins
 db = SQLAlchemy()
 migrate = Migrate()
