@@ -17,8 +17,8 @@ class Config:
     """
 
     # General Config
-    TESTING = True
-    DEBUG = True
+    TESTING = False
+    DEBUG = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
     FLASK_APP = os.environ.get('FLASK_APP')
     SESSION_COOKIE_NAME = 'rg_explore_sess'
@@ -49,3 +49,9 @@ class Config:
 
     # APScheduler
     SCHEDULER_API_ENABLED = True
+
+    # Airbrake
+    PYBRAKE = dict(
+        project_id=os.environ.get('PYBRAKE_PROJECT_ID', None),
+        project_key=os.environ.get('PYBRAKE_KEY', "")
+    )

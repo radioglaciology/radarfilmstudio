@@ -1,4 +1,4 @@
-name: spri_explore_2
+name: spri_explore_4
 channels:
   - conda-forge
   - defaults
@@ -13,6 +13,7 @@ dependencies:
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.1=py_0
   - bleach=3.1.5=pyh9f0ad1d_0
+  - blinker=1.4=py_1
   - blosc=1.20.0=he1b5a44_0
   - bokeh=1.4.0=py38h32f6830_1
   - boost-cpp=1.72.0=h8e57a91_0
@@ -273,11 +274,15 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h6597ccf_2
   - pip:
+    - accumulation-tree==0.6.2
     - flask-continuum==0.1.7
+    - pybrake==0.4.6
     - pyqt5-sip==4.19.18
     - pyqtchart==5.12
     - pyqtwebengine==5.12.1
+    - pyudorandom==1.0.0
     - sqlalchemy-continuum==1.3.11
     - sqlalchemy-utils==0.36.8
-prefix: /home/thomas/Apps/miniconda3/envs/spri_explore_2
+    - tdigest==0.5.2.2
+prefix: /home/thomas/Apps/miniconda3/envs/spri_explore_4
 

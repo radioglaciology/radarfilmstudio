@@ -20,3 +20,6 @@ Use pgloader to transfer everything from the sqlite database to the new one:
 
 `sudo -i -u postgres pgloader --verbose /full/path/to/explore.sqlite postgresql:///spri_explore`
 
+Pushing to Heroku:
+
+`heroku pg:push postgresql://postgres:flaskexploredev@localhost:5432/spri_explore DATABASE_URL --app spri-explore`

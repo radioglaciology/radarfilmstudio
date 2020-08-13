@@ -1,8 +1,10 @@
 from flask import Flask
+
+import pybrake.flask
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_restful import Api
-from flask_images import Images
 from flask_caching import Cache
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -18,7 +20,6 @@ migrate = Migrate()
 continuum = Continuum(db=db, migrate=migrate)
 ma = Marshmallow()
 seg_api = Api()
-images = Images()
 cache = Cache()
 login_manager = LoginManager()
 csrf = CSRFProtect()
@@ -29,6 +30,7 @@ def create_app():
     """ Initialize the explore application """
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object('config.Config')
+    app = pybrake.flask.init_app(app)
 
     from .film_segment import FilmSegment
     from .user import User
@@ -38,7 +40,6 @@ def create_app():
     migrate.init_app(app, db)
     continuum.init_app(app)
     ma.init_app(app)
-    images.init_app(app)
     cache.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)

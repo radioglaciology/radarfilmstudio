@@ -44,7 +44,7 @@
                         vals[1]+"</span></li>";
                 });
 
-                if (('updated_by' in val) && ('last_changed' in val)) {
+                if (('last_changed' in val)) {
                     $('#history-{{ pageref }}').append(
                         "<details><summary>Revision " + key + " by " +
                         "<span class='tag'>" + val['updated_by'][1] + "</span>" +

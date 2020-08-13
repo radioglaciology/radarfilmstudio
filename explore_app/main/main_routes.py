@@ -319,6 +319,11 @@ def stats_page():
                            breadcrumbs=[('Explorer', '/'), ('Stats', url_for('main_bp.stats_page'))])
 
 
+@main_bp.route('/testerror')
+def testerror():
+    raise Exception("Not a real error. Just a test.")
+
+
 # Periodic background updating
 
 @scheduler.task('interval', id='update_stats', seconds=(60*30))
