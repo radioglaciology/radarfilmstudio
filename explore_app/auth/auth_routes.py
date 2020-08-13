@@ -42,8 +42,12 @@ def signup():
     signup_form = SignupForm()
     print(request.method)
     if request.method == 'POST':
-        print('Form validation? ', signup_form.validate_on_submit())
         if signup_form.validate_on_submit():
+            # Check for invite code
+            if signup_form.invite_code.data != 'stanfordradioglaciology2020':
+                flash('Sorry, the invite code was not recognized.')
+                return redirect(url_for('auth_bp.signup'))
+
             first_name = signup_form.first_name.data
             last_name = signup_form.last_name.data
             email = signup_form.email.data
@@ -60,8 +64,9 @@ def signup():
                 print(f"Comitted. Logging in...")
                 login_user(user)  # Log in as newly created user
                 return redirect(url_for('main_bp.map_page'), code=400)
-            flash('A user already exists with that email address.')
-            return redirect(url_for('auth_bp.signup'))
+            else:
+                flash('A user already exists with that email address.')
+                return redirect(url_for('auth_bp.signup'))
         else:
             for fieldName, errorMessages in signup_form.errors.items():
                 print(f"Error in {fieldName}: {errorMessages}")

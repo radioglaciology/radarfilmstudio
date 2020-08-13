@@ -17,6 +17,20 @@
                     {% endfor %}
 
                     <div class="field">
+                        <fieldset class="invite_code">
+                            <label class="label">{{ form.invite_code.label }}</label>
+                            <div class="control">{{ form.invite_code }}</div>
+                            {% if form.invite_code.errors %}
+                                <ul class="errors">
+                                    {% for error in form.invite_code.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </fieldset>
+                    </div>
+
+                    <div class="field">
                         <fieldset class="first_name">
                             <label class="label">{{ form.first_name.label }}</label>
                             <div class="control">{{ form.first_name }}</div>
