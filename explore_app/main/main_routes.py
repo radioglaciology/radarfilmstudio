@@ -35,6 +35,8 @@ flight_progress_stats_updated = None
 query_cache = {}
 images_cache = {}
 
+OVERLAP_FACTOR = 88 / 11362  # Overlap between adjacent radargram images as a percentage of the width of the image
+
 @main_bp.before_app_first_request
 def before_app_first_request():
     update_flight_progress_stats(db.session)
@@ -148,12 +150,14 @@ def query_bulk_action():
             images.append(im)
             sum_x += im.width
 
-        im_output = Image.new(images[0].mode, (sum_x, images[0].height))
+        overlap_px = int(images[0].width * OVERLAP_FACTOR)
+
+        im_output = Image.new(images[0].mode, (sum_x - (overlap_px * (len(images) - 1)), images[0].height))
 
         x = 0
         for im in images:
-            im_output.paste(im, (x, 0))
-            x += im.width
+            im_output.paste(im.crop((int(overlap_px / 2), 0, im.width, im.height)), (x + int(overlap_px / 2), 0))
+            x += im.width - overlap_px
 
         if flip == 'x':
             im_output = ImageOps.mirror(im_output)
