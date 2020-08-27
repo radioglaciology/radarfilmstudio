@@ -1,6 +1,7 @@
 from flask import Flask
 
 import pybrake.flask
+import logging
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
@@ -31,6 +32,12 @@ def create_app():
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object('config.Config')
     app = pybrake.flask.init_app(app)
+
+    if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
+        print("Detected gunicorn. Setting up logging...")
+        gunicorn_logger = logging.getLogger('gunicorn.error')
+        app.logger.handlers = gunicorn_logger.handlers
+        app.logger.setLevel(gunicorn_logger.level)
 
     from .film_segment import FilmSegment
     from .user import User

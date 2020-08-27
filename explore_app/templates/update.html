@@ -350,7 +350,7 @@
             $('#update-load-overlay-{{ pageref }}').removeClass('loader-is-active');
 
         });
-        viewer_{{ pageref }}.load("/api/radargram/jpg/"+id+"/h/200", "/api/radargram/jpg/"+id);
+        viewer_{{ pageref }}.load("/api/radargram/jpg/"+id);
         $("#flight-radargram-fixed-beginning-{{ pageref }}").attr("src","/api/radargram/jpg/"+id);
         $("#flight-radargram-fixed-end-{{ pageref }}").attr("src","/api/radargram/jpg/"+id);
         $("#flight-radargram-full-{{ pageref }}").attr("src","/api/radargram/jpg/"+id);

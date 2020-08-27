@@ -44,7 +44,6 @@ def before_app_first_request():
 
 @main_bp.route('/')
 @main_bp.route('/map/')
-@cache.cached()
 def map_page():
     return render_template("map.html", map=all_flights_map,
                            breadcrumbs=[('Explorer', '/'),
