@@ -26,6 +26,21 @@
                     <div class="level-item">
                         <div class="field">
                             <label class="label">
+                                Reel
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Enter a reel ID to filter by film reel source. Leave blank for all reels.</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <input class="input" name="reel" type="text"
+                                       value="{% if request.args.get('reel') %}{{ request.args.get('reel') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
                                 Verification
                                 <div class="tooltip">
                                     <i class="fas fa-info-circle"></i>

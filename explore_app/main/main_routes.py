@@ -193,6 +193,9 @@ def query_results():
     if request.args.get('flight'):
         query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
 
+    if request.args.get('reel'):
+        query = query.filter(FilmSegment.reel == int(request.args.get('reel')))
+
     if request.args.get('verified'):
         if int(request.args.get('verified')) == 0:
             query = query.filter(FilmSegment.is_verified == False)
