@@ -92,7 +92,13 @@ See https://devcenter.heroku.com/articles/container-registry-and-runtime for ref
 Please build and test your docker image locally. If it doesn't run locally, it's
 highly unlikely to run on Heroku.
 
-TODO
+To push your docker container to Heroku:
+
+`heroku container:push web --app=spri-explore`
+
+This will upload and build the docker container. Once complete, you can release it, which will make it active on the web:
+
+`heroku container:release web --app=spri-explore`
 
 ## Database backup and restore
 
