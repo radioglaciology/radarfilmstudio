@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, url_for, g, redirect, request, send_from_directory, abort
 
 from flask import current_app as app
-from .. import db, cache, scheduler
+from .. import db, cache, scheduler, queue
 
 from flask_login import current_user
 
@@ -12,6 +12,7 @@ from explore_app.film_segment import FilmSegment
 from .stats_plots import update_flight_progress_stats
 
 from ..api.api_routes import has_write_permission, load_image
+from ..api.image_processing import stitch_images
 
 from sqlalchemy import and_, or_
 
@@ -20,7 +21,6 @@ import math
 from collections import OrderedDict
 import uuid
 import os
-from PIL import Image, ImageOps
 from datetime import datetime
 
 main_bp = Blueprint('main_bp', __name__,
@@ -35,7 +35,6 @@ flight_progress_stats_updated = None
 query_cache = {}
 images_cache = {}
 
-OVERLAP_FACTOR = 88 / 11362  # Overlap between adjacent radargram images as a percentage of the width of the image
 
 @main_bp.before_app_first_request
 def before_app_first_request():
@@ -126,48 +125,11 @@ def query_bulk_action():
             return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
 
         query = query.order_by(FilmSegment.first_cbd)
+        img_paths = [f.path for f in query.all()]
 
-        images = []  # TODO: This needs to move to a separate thread!
-        sum_x = 0
-        for f in query.all():
-            img_path = f.path
-            if image_type == 'jpg':
-                pre, ext = os.path.splitext(img_path)
-                img_path = pre + "_lowqual.jpg"
-                filename_out = f"stitch-{qid}.png"
-            else: # otherwise assume TIFF
-                filename_out = f"stitch-{qid}.tiff"
+        job = queue.enqueue(stitch_images, args=(img_paths, image_type, flip, scale_x, scale_y, qid, app.config['TMP_OUTPUTS_DIR'], app.config['FILM_IMAGES_DIR']))
+        return f"started:{job.get_id()}"
 
-            im = load_image(img_path)
-            if flip == 'x':
-                im = ImageOps.mirror(im)
-
-            if image_type == 'jpg':
-                im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
-            else:
-                im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
-
-            images.append(im)
-            sum_x += im.width
-
-        overlap_px = int(images[0].width * OVERLAP_FACTOR)
-
-        im_output = Image.new(images[0].mode, (sum_x - (overlap_px * (len(images) - 1)), images[0].height))
-
-        x = 0
-        for im in images:
-            im_output.paste(im.crop((int(overlap_px / 2), 0, im.width, im.height)), (x + int(overlap_px / 2), 0))
-            x += im.width - overlap_px
-
-        if flip == 'x':
-            im_output = ImageOps.mirror(im_output)
-
-        im_output.save(os.path.join(app.config['TMP_OUTPUTS_DIR'], filename_out))
-
-        images_cache[qid] = {
-            'filename': filename_out,
-            'timestamp': time.time()
-        }
     else:
         return "Unknown action type"
 

@@ -13,6 +13,10 @@ from flask_continuum import Continuum
 from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
 
+from rq import Queue
+from rq.job import Job
+from worker import conn
+
 import os
 
 # Globally accessible plugins
@@ -25,6 +29,7 @@ cache = Cache()
 login_manager = LoginManager()
 csrf = CSRFProtect()
 scheduler = APScheduler()
+queue = Queue(connection=conn)
 
 
 def create_app():
