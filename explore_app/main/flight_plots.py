@@ -146,65 +146,71 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
 
 
 def make_linked_flight_plots(session, flight_id, flight_lines=None):
-    map_dict = make_bokeh_map(None, None, flight_id=flight_id, title=f"Flight {flight_id}",
-                                         flight_lines=flight_lines, return_dict=True)
-    p_map, map_data_sources, map_highlight_source = map_dict['plot'], map_dict['data_sources'], map_dict['highlight_source'] # unpack map parts we need
-
     p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, None, None, return_plot=True)
 
-    # Setup cross-linking between CDB and map plots
-    cbd_source.selected.js_on_change('indices',
-                                     CustomJS(args=dict(cbd_source=cbd_source,
-                                                        map_source=map_data_sources[0],
-                                                        highlight_source=map_highlight_source), code="""
-            if (cb_obj.indices.length > 0) {
-                cb_obj.indices = [cb_obj.indices[0]];
-            }
-            var first_cbd = cbd_source.data['first_cbd'][cb_obj.indices[0]];
-            var last_cbd = cbd_source.data['last_cbd'][cb_obj.indices[0]];
-            if (first_cbd > last_cbd) {
-                var temp = first_cbd;
-                first_cbd = last_cbd;
-                last_cbd = temp;
-            }
-            highlight_source.data['X'] = [];
-            highlight_source.data['Y'] = [];
-            for (var i=0; i < map_source.data['CBD'].length; i++) {
-                if ((map_source.data['CBD'][i] >= first_cbd) && (map_source.data['CBD'][i] <= last_cbd)) {
-                    highlight_source.data['X'].push(map_source.data['X'][i]);
-                    highlight_source.data['Y'].push(map_source.data['Y'][i]);
+    map_dict = make_bokeh_map(None, None, flight_id=flight_id, title=f"Flight {flight_id}",
+                                         flight_lines=flight_lines, return_components=True)
+
+    if map_dict is not None:
+        p_map, map_data_sources, map_highlight_source = map_dict['map'], map_dict['data_sources'], map_dict['highlight_source'] # unpack map parts we need
+
+        # Setup cross-linking between CDB and map plots
+        cbd_source.selected.js_on_change('indices',
+                                        CustomJS(args=dict(cbd_source=cbd_source,
+                                                            map_source=map_data_sources[0],
+                                                            highlight_source=map_highlight_source), code="""
+                if (cb_obj.indices.length > 0) {
+                    cb_obj.indices = [cb_obj.indices[0]];
                 }
-            }
-            highlight_source.change.emit();
-        """))
-
-    map_data_sources[0].selected.js_on_change('line_indices', CustomJS(args={'cbd_source': cbd_source, 'map_source': map_data_sources[0]}, code="""
-        if (cb_obj.line_indices.length > 0) {
-
-            var cbd = map_source.data['CBD'][cb_obj.line_indices[0]];
-
-            cbd_source.selected.indices = [];
-
-            for (var i=0; i < cbd_source.data['first_cbd'].length; i++) {
-                var first_cbd = cbd_source.data['first_cbd'][i];
-                var last_cbd = cbd_source.data['last_cbd'][i];
+                var first_cbd = cbd_source.data['first_cbd'][cb_obj.indices[0]];
+                var last_cbd = cbd_source.data['last_cbd'][cb_obj.indices[0]];
                 if (first_cbd > last_cbd) {
                     var temp = first_cbd;
                     first_cbd = last_cbd;
                     last_cbd = temp;
                 }
-
-                if ((cbd >= first_cbd) && (cbd <= last_cbd)) {
-                    cbd_source.selected.indices.push(i);
+                highlight_source.data['X'] = [];
+                highlight_source.data['Y'] = [];
+                for (var i=0; i < map_source.data['CBD'].length; i++) {
+                    if ((map_source.data['CBD'][i] >= first_cbd) && (map_source.data['CBD'][i] <= last_cbd)) {
+                        highlight_source.data['X'].push(map_source.data['X'][i]);
+                        highlight_source.data['Y'].push(map_source.data['Y'][i]);
+                    }
                 }
+                highlight_source.change.emit();
+            """))
+
+        map_data_sources[0].selected.js_on_change('line_indices', CustomJS(args={'cbd_source': cbd_source, 'map_source': map_data_sources[0]}, code="""
+            if (cb_obj.line_indices.length > 0) {
+
+                var cbd = map_source.data['CBD'][cb_obj.line_indices[0]];
+
+                cbd_source.selected.indices = [];
+
+                for (var i=0; i < cbd_source.data['first_cbd'].length; i++) {
+                    var first_cbd = cbd_source.data['first_cbd'][i];
+                    var last_cbd = cbd_source.data['last_cbd'][i];
+                    if (first_cbd > last_cbd) {
+                        var temp = first_cbd;
+                        first_cbd = last_cbd;
+                        last_cbd = temp;
+                    }
+
+                    if ((cbd >= first_cbd) && (cbd <= last_cbd)) {
+                        cbd_source.selected.indices.push(i);
+                    }
+                }
+
+                cbd_source.change.emit();
+                cbd_source.selected.change.emit();
             }
+        
+        """))
 
-            cbd_source.change.emit();
-            cbd_source.selected.change.emit();
-        }
-    
-    """))
-
-    plots = {'map': p_map, 'cbd': p_cbd, 'controls': cbd_controls}
-    script, divs = components(plots)
-    return f'\n{script}\n\n{divs["map"]}\n', f'\n {divs["cbd"]}\n', f'\n{divs["controls"]}\n'
+        plots = {'map': p_map, 'cbd': p_cbd, 'controls': cbd_controls, 'tile_select': map_dict['tile_select']}
+        script, divs = components(plots)
+        return f'\n{script}\n\n{divs["map"]}\n', f'\n {divs["cbd"]}\n', f'\n{divs["controls"]}\n', f'\n{divs["tile_select"]}\n'
+    else:
+        plots = {'cbd': p_cbd, 'controls': cbd_controls}
+        script, divs = components(plots)
+        return f"\n{script}\n\n<div class='plot_error'>Couldn't find the requested flight ID.</div>\n", f'\n {divs["cbd"]}\n', f'\n{divs["controls"]}\n', f''

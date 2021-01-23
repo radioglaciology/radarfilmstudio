@@ -37,7 +37,7 @@ def load_flight_lines(positioning_dir):
     return flight_lines
 
 
-def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None, return_dict=False, return_plot=False, return_components=False):
+def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None, return_plot=False, return_components=False):
     if not flight_lines:
         print("Warning: Recommend pre-loading positioning files to speedup page load.")
         flight_lines = load_flight_lines('../original_positioning/')
@@ -45,11 +45,14 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
     if not flight_id:
         flight_lines = list(flight_lines.values())
     else:
+        print("specific flight")
         if flight_id in flight_lines:
             flight_lines = [flight_lines[flight_id]]
         else:
             not_found_html = "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
-            if return_plot:
+            if return_components:
+                return None
+            elif return_plot:
                 return not_found_html, None
             else:
                 return not_found_html
@@ -114,17 +117,12 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
     if return_components:
         return {
             'map': p,
-            'tile_select': tile_select
-        }
-
-    if return_dict:
-        return {
-            'plot': p,
+            'tile_select': tile_select,
             'flight_lines': flight_lines,
             'data_sources': data_sources,
             'highlight_source': highlight_source
         }
-    if return_plot:
+    elif return_plot:
         return p, flight_lines
     else:
         script, div = components(p)

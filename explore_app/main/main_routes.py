@@ -31,6 +31,7 @@ main_bp = Blueprint('main_bp', __name__,
 
 flight_lines = load_flight_lines(app.config['FLIGHT_POSITIONING_DIR'])
 all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines, return_components=True)
+all_flights_map = {k:all_flights_map[k] for k in all_flights_map if k in ['map', 'tile_select']}
 
 flight_progress_stats_updated = None
 
@@ -59,7 +60,7 @@ def flight_page(flight_id):
     #map = make_bokeh_map(300, 300, flight_id=flight_id, title="Flight Map", flight_lines=flight_lines)
     #cbd_plot = make_cbd_plot(db.session, flight_id, 500, 300)
 
-    map_html, cbd_html, cbd_controls_html = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
+    map_html, cbd_html, cbd_controls_html, map_controls_html = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
 
     # Check for a direct link to a specific segment to be loaded
     if 'id' in request.args:
@@ -69,7 +70,8 @@ def flight_page(flight_id):
 
     print(app.config['ENABLE_TIFF'])
 
-    return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html, segment_id=segment_id,
+    return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html,
+                            segment_id=segment_id, map_controls=map_controls_html,
                            pageref=0, show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
 
