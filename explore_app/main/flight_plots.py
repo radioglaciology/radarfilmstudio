@@ -1,6 +1,6 @@
 from bokeh.plotting import figure
 from bokeh.models.sources import ColumnDataSource
-from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter
+from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter, HoverTool
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
@@ -44,7 +44,7 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
     toggle_z.js_on_change('active', CustomJS(args=dict(source=source), code="source.change.emit()"))
     toggle_a.js_on_change('active', CustomJS(args=dict(source=source), code="source.change.emit()"))
 
-    filter_verified = CustomJSFilter(args=dict(source=source, tog=toggle_verified), code='''
+    filter_verified = CustomJSFilter(args=dict(tog=toggle_verified), code='''
         var indices = [];
         for (var i = 0; i < source.get_length(); i++){
             if ((!tog.active) || source.data['is_verified'][i]){
@@ -55,7 +55,7 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
         }
         return indices;
     ''')
-    filter_junk = CustomJSFilter(args=dict(source=source, tog=toggle_junk), code='''
+    filter_junk = CustomJSFilter(args=dict(tog=toggle_junk), code='''
         var indices = [];
         for (var i = 0; i < source.get_length(); i++){
             if (tog.active && source.data['is_junk'][i]){
@@ -64,9 +64,11 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
                 indices.push(true);
             }
         }
+        console.log(indices);
         return indices;
     ''')
-    filter_scope = CustomJSFilter(args=dict(source=source, tog_a=toggle_a, tog_z=toggle_z), code='''
+    filter_scope = CustomJSFilter(args=dict(tog_a=toggle_a, tog_z=toggle_z), code='''
+        console.log('filter_scope');
         var indices = [];
         for (var i = 0; i < source.get_length(); i++){
             if (tog_a.active && (source.data['scope_type'][i] == 'a')){
@@ -77,39 +79,45 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
                 indices.push(false);
             }
         }
+        console.log(indices);
         return indices;
     ''')
-    view = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
+    # Note: We use three separate views because otherwise the browser locks up when toggling any of the buttons.
+    # I strongly suspect this is related to:
+    #   https://github.com/bokeh/bokeh/pull/10521
+    #   https://github.com/holoviz/holoviews/issues/4589
+    # Unfortunately, I have been unable to replicate the issue in a standalone example.
+    view0 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
+    view1 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
+    view2 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
 
-    TOOLTIPS = [
-        ("Reel", "@reel"),
-        ("Scope", "@scope_type"),
-        ("Verified", "@is_verified")
-    ]
+    p = figure(tools=['pan,wheel_zoom,box_zoom,reset,tap'])
 
-    p = figure(tools=['pan,wheel_zoom,box_zoom,reset,tap,hover'], tooltips=TOOLTIPS)
 
-    p.segment(y0='first_frame', y1='last_frame', x0='first_cbd', x1='last_cbd',
-              color=app.config["COLOR_GRAY"], source=source, view=view)
-    scat_first = p.scatter('first_cbd', 'first_frame', color='Color by Verified', source=source, view=view,
+
+    segs = p.segment(y0='first_frame', y1='last_frame', x0='first_cbd', x1='last_cbd',
+              color=app.config["COLOR_GRAY"], source=source, view=view0)
+    scat_first = p.scatter('first_cbd', 'first_frame', color='Color by Verified', source=source, view=view1,
                            nonselection_fill_color=app.config["COLOR_GRAY"])
-    scat_last = p.scatter('last_cbd', 'last_frame', color='Color by Verified', source=source, view=view,
+    scat_last = p.scatter('last_cbd', 'last_frame', color='Color by Verified', source=source, view=view2,
                           nonselection_fill_color=app.config["COLOR_GRAY"])
 
-    # selected_circle = Circle(fill_alpha=1, fill_color="Color by Verified", line_color="Color by Verified", radius=1)
-    # nonselected_circle = Circle(fill_alpha=1, fill_color="Color by Verified", line_color="Color by Verified", radius=1)
-    #
-    # scat_last.selection_glyph = selected_circle
-    # #scat_first.selection_glyph = selected_circle
-    # scat_last.nonselection_glyph = nonselected_circle
-    # #scat_first.nonselection_glyph = nonselected_circle
+    p.add_tools(HoverTool(
+        renderers=[segs],
+        tooltips=[
+            ("Reel", "@reel"),
+            ("Scope", "@scope_type"),
+            ("Verified", "@is_verified")
+        ]
+    ))
 
     p.xaxis.axis_label = "CBD"
     p.yaxis.axis_label = "Frame"
 
-    p.sizing_mode = "fixed"
-    p.width = width
-    p.height = height
+    p.sizing_mode = "stretch_both"
+    if (width is not None) and (height is not None):
+        p.width = width
+        p.height = height
     p.title.text = "Film Segments"
 
     # Select matching code from https://stackoverflow.com/questions/54768576/python-bokeh-customjs-debugging-a-javascript-callback-for-the-taping-tool
@@ -132,8 +140,8 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
         """)
 
     color_select = Select(value="Color by Verified",
-                          options=["Color by Verified", "Color by Reel", "Color by Review", "Color by Frequency"],
-                          callback=cb_cselect)
+                          options=["Color by Verified", "Color by Reel", "Color by Review", "Color by Frequency"])
+    color_select.js_on_change('value', cb_cselect)
 
     if return_plot:
         return p, column(toggle_verified, toggle_junk, toggle_z, toggle_a, color_select), source
@@ -145,59 +153,65 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
 
 
 def make_linked_flight_plots(session, flight_id, flight_lines=None):
-    p_map, map_flight_lines = make_bokeh_map(300, 300, flight_id=flight_id, title=f"Flight {flight_id}",
-                                         flight_lines=flight_lines, return_plot=True)
-    p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, 500, 300, return_plot=True)
+    map_dict = make_bokeh_map(None, None, flight_id=flight_id, title=f"Flight {flight_id}",
+                                         flight_lines=flight_lines, return_dict=True)
+    p_map, map_data_sources, map_highlight_source = map_dict['plot'], map_dict['data_sources'], map_dict['highlight_source'] # unpack map parts we need
 
+    p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, None, None, return_plot=True)
+
+    # Setup cross-linking between CDB and map plots
     cbd_source.selected.js_on_change('indices',
-                                     CustomJS(args=dict(cbd_source=cbd_source), code="""
-                 if (cb_obj.indices.length > 0) {
-                     cb_obj.indices = [cb_obj.indices[0]];
-                 }
-             """))
+                                     CustomJS(args=dict(cbd_source=cbd_source,
+                                                        map_source=map_data_sources[0],
+                                                        highlight_source=map_highlight_source), code="""
+            if (cb_obj.indices.length > 0) {
+                cb_obj.indices = [cb_obj.indices[0]];
+            }
+            var first_cbd = cbd_source.data['first_cbd'][cb_obj.indices[0]];
+            var last_cbd = cbd_source.data['last_cbd'][cb_obj.indices[0]];
+            if (first_cbd > last_cbd) {
+                var temp = first_cbd;
+                first_cbd = last_cbd;
+                last_cbd = temp;
+            }
+            highlight_source.data['X'] = [];
+            highlight_source.data['Y'] = [];
+            for (var i=0; i < map_source.data['CBD'].length; i++) {
+                if ((map_source.data['CBD'][i] >= first_cbd) && (map_source.data['CBD'][i] <= last_cbd)) {
+                    highlight_source.data['X'].push(map_source.data['X'][i]);
+                    highlight_source.data['Y'].push(map_source.data['Y'][i]);
+                }
+            }
+            highlight_source.change.emit();
+        """))
 
-    if map_flight_lines is None:
-        # No map found for this flight
-        print(f"No map for flight {flight_id}")
-        map_html = p_map
-        # TODO: Should still enable the only select one segment at a time thing
-    else:
-        map_script, map_div = components(p_map)
-        map_html = f"\n{map_script}\n\n{map_div}\n"
+    map_data_sources[0].selected.js_on_change('line_indices', CustomJS(args={'cbd_source': cbd_source, 'map_source': map_data_sources[0]}, code="""
+        if (cb_obj.line_indices.length > 0) {
 
+            var cbd = map_source.data['CBD'][cb_obj.line_indices[0]];
 
-    # else:
-    #     map_script, map_div = components(p_map)
-    #     map_html = f"\n{map_script}\n\n{map_div}\n"
-    #
-    #     # What this does:
-    #     # 1. Only allow selection of one segment at a time
-    #
-    #     # if (cb_obj.indices.length > 0) {
-    #     #             cb_obj.indices = [cb_obj.indices[0]];
-    #     #         }
-    #
-    #     # Old additional code:
-    #     #     var inds = cb_obj.indices;
-    #     #     var cbd_data = cbd_source.data;
-    #     #     for (var i = 0; i < inds.length; i++) {
-    #     #         console.log(cbd_data['first_cbd'][inds[i]]);
-    #     #         console.log(cbd_data['last_cbd'][inds[i]]);
-    #     #     }
-    #     cbd_source.selected.js_on_change('indices',
-    #                                      CustomJS(args=dict(cbd_source=cbd_source,
-    #                                                         flight_line=map_flight_lines[0]), code="""
-    #         if (cb_obj.indices.length > 0) {
-    #             cb_obj.indices = [cb_obj.indices[0]];
-    #         }
-    #         console.log(cb_obj);
-    #         console.log(cbd_source);
-    #         console.log(cbd_source.data['first_cbd'][cb_obj.indices[0]]);
-    #         console.log(cbd_source.data['last_cbd'][cb_obj.indices[0]]);
-    #     """))
+            cbd_source.selected.indices = [];
 
-    layout = row(p_cbd, cbd_controls)
-    cbd_script, cbd_div = components(layout)
-    cbd_html = f'\n{cbd_script}\n\n{cbd_div}\n'
+            for (var i=0; i < cbd_source.data['first_cbd'].length; i++) {
+                var first_cbd = cbd_source.data['first_cbd'][i];
+                var last_cbd = cbd_source.data['last_cbd'][i];
+                if (first_cbd > last_cbd) {
+                    var temp = first_cbd;
+                    first_cbd = last_cbd;
+                    last_cbd = temp;
+                }
 
-    return map_html, cbd_html
+                if ((cbd >= first_cbd) && (cbd <= last_cbd)) {
+                    cbd_source.selected.indices.push(i);
+                }
+            }
+
+            cbd_source.change.emit();
+            cbd_source.selected.change.emit();
+        }
+    
+    """))
+
+    plots = {'map': p_map, 'cbd': p_cbd, 'controls': cbd_controls}
+    script, divs = components(plots)
+    return f'\n{script}\n\n{divs["map"]}\n', f'\n {divs["cbd"]}\n', f'\n{divs["controls"]}\n'

@@ -5,11 +5,15 @@
 {% block content %}
 <section class="section">
     <div class="container">
+        {{ bokeh_script|safe }}
         <nav class="level">
             <div class="level-item has-text-centered">
-                <div style="height: 800px; width: 800px;">
-                    {{ map|safe }}
-                </div>
+                {{ map|safe }}
+            </div>
+        </nav>
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                {{ tile_select|safe }}
             </div>
         </nav>
     </div>

@@ -4,7 +4,34 @@
         <div class="loader is-loading"></div>
     </div>
 
-    <h2 class="subtitle">Image and Metadata</h2>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-item">
+            <h2 class="subtitle">Image and Metadata</h2>
+        </div>
+        <div class="navbar-end">
+            <div class="navbar-item" {% if not (show_view_toggle|default(false, true)) %}style="visibility: hidden;"{% endif %}>
+                Film Display: &nbsp;
+                <fieldset id="seg-view-fieldset">
+                    <div class="switch-toggle switch-holo" style="width: 260px;">
+                        <input id="seg-view-zoom" name="seg-view" type="radio" checked>
+                        <label for="seg-view-zoom" onclick="update_seg_view_cookie('zoom')">Zoom</label>
+        
+                        <input id="seg-view-scroll" name="seg-view" type="radio">
+                        <label for="seg-view-scroll" onclick="update_seg_view_cookie('scroll')">Scroll</label>
+        
+                        <input id="seg-view-startend" name="seg-view" type="radio">
+                        <label for="seg-view-startend" onclick="update_seg_view_cookie('startend')">Start/End</label>
+        
+                        <a></a>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </nav>
+
+    
+
+    
 
     <div class="container">
         <div id="flight-radargram-zoom-container-{{ pageref }}" class="flight-radargram-zoom-container">

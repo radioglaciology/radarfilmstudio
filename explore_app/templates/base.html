@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} - SPRI Film Explorer</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.js"
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-2.2.3.js"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.js"
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.2.3.js"
             crossorigin="anonymous"></script>
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.js"
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.2.3.js"
             crossorigin="anonymous"></script>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
@@ -96,24 +96,6 @@
         </div>
 
         <div class="navbar-end">
-
-            <div class="navbar-item" {% if not (show_view_toggle|default(false, true)) %}style="visibility: hidden;"{% endif %}>
-                Film Display: &nbsp;
-                <fieldset id="seg-view-fieldset">
-                    <div class="switch-toggle switch-holo" style="width: 260px;">
-                        <input id="seg-view-zoom" name="seg-view" type="radio" checked>
-                        <label for="seg-view-zoom" onclick="update_seg_view_cookie('zoom')">Zoom</label>
-
-                        <input id="seg-view-scroll" name="seg-view" type="radio">
-                        <label for="seg-view-scroll" onclick="update_seg_view_cookie('scroll')">Scroll</label>
-
-                        <input id="seg-view-startend" name="seg-view" type="radio">
-                        <label for="seg-view-startend" onclick="update_seg_view_cookie('startend')">Start/End</label>
-
-                        <a></a>
-                    </div>
-                </fieldset>
-            </div>
             {% if current_user.is_authenticated %}
                 <div class="navbar-item">
                     <p>Hi, {{ current_user.first_name }}!</p>

@@ -16,6 +16,8 @@ from ..api.image_processing import stitch_images
 
 from sqlalchemy import and_, or_
 
+from bokeh.embed import components
+
 import time
 import math
 from collections import OrderedDict
@@ -28,7 +30,7 @@ main_bp = Blueprint('main_bp', __name__,
                     static_folder='static')
 
 flight_lines = load_flight_lines(app.config['FLIGHT_POSITIONING_DIR'])
-all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines)
+all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines, return_components=True)
 
 flight_progress_stats_updated = None
 
@@ -46,8 +48,10 @@ def before_app_first_request():
 @main_bp.route('/')
 @main_bp.route('/map/')
 def map_page():
-    return render_template("map.html", map=all_flights_map,
-                           breadcrumbs=[('Explorer', '/'),
+    script, divs = components(all_flights_map)
+    return render_template("map.html",
+                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'],
+                            breadcrumbs=[('Explorer', '/'),
                                         ('Map', url_for('main_bp.map_page'))])
 
 @main_bp.route('/flight/<int:flight_id>/')
@@ -55,7 +59,7 @@ def flight_page(flight_id):
     #map = make_bokeh_map(300, 300, flight_id=flight_id, title="Flight Map", flight_lines=flight_lines)
     #cbd_plot = make_cbd_plot(db.session, flight_id, 500, 300)
 
-    map, cbd = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
+    map_html, cbd_html, cbd_controls_html = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
 
     # Check for a direct link to a specific segment to be loaded
     if 'id' in request.args:
@@ -65,7 +69,7 @@ def flight_page(flight_id):
 
     print(app.config['ENABLE_TIFF'])
 
-    return render_template("flight.html", flight=flight_id, map=map, cbd_plot=cbd, segment_id=segment_id,
+    return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html, segment_id=segment_id,
                            pageref=0, show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
 

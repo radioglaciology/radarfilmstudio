@@ -4,18 +4,18 @@
 
 {% block content %}
 <section class="section">
-    <div class="container" id="flight-header">
-        <!--<h2>Flight #{{ flight }}</h2>-->
-    </div>
     <div class="container" id="flight-plots">
-        <nav class="level">
-            <div class="level-item has-text-centered">
+        <div class="columns" style="height:300px;">
+            <div class="column">
                 {{ map|safe }}
             </div>
-            <div class="level-item has-text-centered">
+            <div class="column">
                 {{ cbd_plot|safe }}
             </div>
-        </nav>
+            <div class="column is-one-quarter">
+                {{ cbd_controls|safe }}
+            </div>
+        </div>
     </div>
     <div class="container" id="flight-update">
         {%  include "update.html" %}
