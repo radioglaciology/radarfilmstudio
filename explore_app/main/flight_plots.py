@@ -82,24 +82,17 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
         console.log(indices);
         return indices;
     ''')
-    # Note: We use three separate views because otherwise the browser locks up when toggling any of the buttons.
-    # I strongly suspect this is related to:
-    #   https://github.com/bokeh/bokeh/pull/10521
-    #   https://github.com/holoviz/holoviews/issues/4589
-    # Unfortunately, I have been unable to replicate the issue in a standalone example.
-    view0 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
-    view1 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
-    view2 = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
+    view = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
 
     p = figure(tools=['pan,wheel_zoom,box_zoom,reset,tap'])
 
 
 
     segs = p.segment(y0='first_frame', y1='last_frame', x0='first_cbd', x1='last_cbd',
-              color=app.config["COLOR_GRAY"], source=source, view=view0)
-    scat_first = p.scatter('first_cbd', 'first_frame', color='Color by Verified', source=source, view=view1,
+              color=app.config["COLOR_GRAY"], source=source, view=view)
+    scat_first = p.scatter('first_cbd', 'first_frame', color='Color by Verified', source=source, view=view,
                            nonselection_fill_color=app.config["COLOR_GRAY"])
-    scat_last = p.scatter('last_cbd', 'last_frame', color='Color by Verified', source=source, view=view2,
+    scat_last = p.scatter('last_cbd', 'last_frame', color='Color by Verified', source=source, view=view,
                           nonselection_fill_color=app.config["COLOR_GRAY"])
 
     p.add_tools(HoverTool(
