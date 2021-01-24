@@ -436,10 +436,26 @@
                         url: "/query/action",
                         data: $("#stitch-form").serialize(),
                         success: function(res) {
-                            if (res === 'success') {
-                                $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> Success! <a href='/outputs/{{ query_id }}' download>Download your image here.</a>");
-                                $("#bulk-action-modal-btn").hide();
-                                $("#bulk-action-modal-btn-close").show();
+                            if (res.startsWith('started')) {
+                                var job_id = res.substr(8);
+                                $("#bulk-action-modal-text").html("<i class='fas fa-spinner fa-spin'></i> Job started. Please wait.");
+
+                                function poll_job() {
+                                    // Check on job status
+                                    $.ajax({
+                                        type: "GET",
+                                        url: "/query/status/"+job_id,
+                                        success: function(res) {
+                                            if (res === 'done') {
+                                                var result_url = "/outputs/"+job_id;
+                                                $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> <a href='"+result_url+"'>Click here to download result.</a>");
+                                            } else {
+                                                setTimeout(poll_job, 1000);
+                                            }
+                                        }
+                                    });
+                                }
+                                poll_job();
                             } else {
                                 $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
                             }

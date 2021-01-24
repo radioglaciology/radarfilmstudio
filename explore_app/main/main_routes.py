@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, url_for, g, redirect, request, send_from_directory, abort
+from rq.job import Job
 
 from flask import current_app as app
 from .. import db, cache, scheduler, queue
+from worker import conn
 
 from flask_login import current_user
 
@@ -142,14 +144,24 @@ def query_bulk_action():
     print(f"Request type [{action_type}] took {time.time() - t} seconds to process")
     return "success"
 
+@main_bp.route('/query/status/<job_id>')
+def get_job_status(job_id):
+    job = Job.fetch(job_id, connection=conn)
 
-@main_bp.route('/outputs/<query_id>')
-def get_output_image(query_id):
-    if query_id in images_cache:
-        tmp_path = os.path.join(os.getcwd(), app.config['TMP_OUTPUTS_DIR'])
-        return send_from_directory(tmp_path, images_cache[query_id]['filename'], as_attachment=True)
+    if job.is_finished:
+        return 'done'
     else:
-        return abort(404)
+        return 'running'
+
+@main_bp.route('/outputs/<job_id>')
+def get_output_image(job_id):
+    job = Job.fetch(job_id, connection=conn)
+
+    if job.is_finished:
+        tmp_path = os.path.join(os.getcwd(), app.config['TMP_OUTPUTS_DIR'])
+        return send_from_directory(tmp_path, job.result['filename'], as_attachment=True)
+    else:
+        return "Job not complete", 202
 
 
 @main_bp.route('/query')
