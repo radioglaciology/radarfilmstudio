@@ -1,0 +1,337 @@
+<div class="container"><div class="box">
+    {% if stitch_preview %}
+        <div id="stitch-preview-div" class="flight-radargram">
+            <div class="horizontal-scroll-wrapper" style="max-width: 100%;">
+                <img id="radargram-stitch-preview" src=""/>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            function load_preview() {
+                $.ajax({
+                        type: "POST",
+                        url: "/query/action",
+                        data: {
+                            'format': 'jpg',
+                            'flip': 'x',
+                            'scale_x': 0.2,
+                            'scale_y': 1.0,
+                            'query_id': '{{ query_id }}',
+                            'scope': 'query',
+                            'action_type': 'stitch'
+                        },
+                        success: function(res) {
+                            if (res.startsWith('started')) {
+                                var job_id = res.substr(8);
+
+                                function poll_job() {
+                                    // Check on job status
+                                    $.ajax({
+                                        type: "GET",
+                                        url: "/query/status/"+job_id,
+                                        success: function(res) {
+                                            if (res === 'done') {
+                                                var result_url = "/outputs/"+job_id;
+                                                $("#radargram-stitch-preview").attr("src", result_url);
+                                                $("#stitch-preview-div").fadeIn(500);
+                                            } else {
+                                                setTimeout(poll_job, 1000);
+                                            }
+                                        }
+                                    });
+                                }
+                                poll_job();
+                            }
+                        }
+                    });
+            }
+            
+            setTimeout(load_preview, 1000);
+        </script>
+
+    {% else %}
+        <div class="notification">
+            Stitched previews are only available with 10 or fewer film segments selected. You can still generate a preview at the bottom of this page.
+        </div>
+    {% endif %}
+</div></div>
+
+{% if paginate %}
+<div class="container">
+    {% include "paginate.html" %}
+</div>
+{% endif %}
+
+{% for seg in segments %}
+    {% set pageref = loop.index %}
+    <div class="container">
+        {%  include "update.html" %}
+    </div>
+    <script type="text/javascript">update_form_id_{{ pageref }}({{ seg.id }})</script>
+{% endfor %}
+
+{% if paginate %}
+<div class="container">
+    {% include "paginate.html" %}
+</div>
+{% endif %}
+
+<div class="container">
+    <a name="actions"></a>
+    {% if (current_user.is_authenticated and current_user.write_permission) %}
+        <h2 class="subtitle">Process all results of this query...</h2>
+        <div class="notification">
+            Actions are applied to all <strong>{{ n_total_results }} film segments</strong> selected by
+            this query{% if paginate %} -- not just the ones on this page{% endif %}. These actions do not change the film segments themselves.
+            They only produce temporary outputs you may download.
+        </div>
+
+        <div class="box">
+            <form id="stitch-form">
+                <input type="hidden" name="query_id" value="{{ query_id }}" />
+                <input type="hidden" name="scope" value="query" />
+                <input type="hidden" name="action_type" value="stitch" />
+
+                <nav class="level">
+
+                    <div class="level-left">
+                        <div class="level-item">
+                            <div class="field">
+                                <label class="label">
+                                    Source Format
+                                    <div class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">You can generate stitched images from the low-quality JPG previews or the full original TIFF images</span>
+                                    </div>
+                                </label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="format">
+                                            <option value="jpg">JPG (low quality, fast)</option>
+                                            {% if enable_tiff == 1 %}
+                                                <option value="tiff">TIFF (high quality, slow)</option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <div class="field">
+                                <label class="label">
+                                    Flip images
+                                    <div class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">If CBD numbers are decreasing in the images, flip horizontally to correct this in the stitched image</span>
+                                    </div>
+                                </label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="flip">
+                                            <option value="x">Flip images horizontally</option>
+                                            <option value="">Don't change orientation</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <div class="field">
+                                <label class="label">
+                                    Re-scale in X
+                                    <div class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">Stretch or shrink the output image in X by this ratio</span>
+                                    </div>
+                                </label>
+                                <div class="control">
+                                    <input class="input" name="scale_x" type="number" value="0.2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <div class="field">
+                                <label class="label">
+                                    Re-scale in Y
+                                    <div class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">Stretch or shrink the output image in Y by this ratio</span>
+                                    </div>
+                                </label>
+                                <div class="control">
+                                    <input class="input" name="scale_y" type="number" value="1.0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="level-right" style="margin-top: auto;">
+                        <div class="level-item">
+                            <div class="field">
+                                <div class="control">
+                                    <button class="button is-primary" id="stitch-button">Stitch into single image</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </nav>
+            </form>
+        </div>
+
+        {% if paginate %}
+            <h2 class="subtitle">Make changes to film segments shown on this page...</h2>
+            <div class="notification">
+                Actions applied here will affect all film segments shown on this page.
+            </div>
+
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-link" onclick="bulk_action('page', 'mark_verified')">Mark all verified</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" onclick="bulk_action('page', 'set_60mhz')">Set Frequency to 60 MHz</button>
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" onclick="bulk_action('page', 'set_300mhz')">Set Frequency to 300 MHz</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        {% endif %}
+
+        <h2 class="subtitle">Make changes to all query results...</h2>
+        <div class="notification is-warning">
+            <div class="control"><label class="checkbox">
+                <input type="checkbox" id="all-query-agreement">
+                I understand that actions applied here will affect all <strong>{{ n_total_results }} film
+                segments</strong> selected by this query{% if paginate %} -- not just the ones on this page{% endif %}. Be careful!
+            </label></div>
+        </div>
+
+        <nav class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button
+                                    class="button is-danger bulk-danger"
+                                    onclick="bulk_action('query', 'mark_verified')"
+                                    disabled
+                            >Mark all verified
+                            </button>
+                        </div>
+                        <div class="control">
+                            <button
+                                    class="button is-danger bulk-danger"
+                                    onclick="bulk_action('query', 'set_60mhz')"
+                                    disabled
+                            >Set frequency to 60 MHz
+                            </button>
+                        </div>
+                        <div class="control">
+                            <button
+                                    class="button is-danger bulk-danger"
+                                    onclick="bulk_action('query', 'set_300mhz')"
+                                    disabled
+                            >Set frequency to 300 MHz
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <script type="text/javascript">
+            function bulk_action(scope, action_type) {
+                $.ajax({
+                    type: "POST",
+                    url: "/query/action",
+                    data: {'query_id': '{{ query_id }}', 'action_type': action_type, 'scope': scope},
+                    success: function(res) {
+                        if (res === 'success') {
+                            $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> Action successful!");
+                        } else {
+                            $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
+                        }
+                        $("#bulk-action-modal-btn").removeAttr("disabled");
+                    }
+                });
+                $("#bulk-action-modal").addClass("is-active");
+            }
+
+            $("#stitch-button").click(function(event){
+                event.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: "/query/action",
+                    data: $("#stitch-form").serialize(),
+                    success: function(res) {
+                        if (res.startsWith('started')) {
+                            var job_id = res.substr(8);
+                            $("#bulk-action-modal-text").html("<i class='fas fa-spinner fa-spin'></i> Job started. Please wait.");
+                            $("#bulk-action-modal-btn").hide();
+
+                            function poll_job() {
+                                // Check on job status
+                                $.ajax({
+                                    type: "GET",
+                                    url: "/query/status/"+job_id,
+                                    success: function(res) {
+                                        if (res === 'done') {
+                                            var result_url = "/outputs/"+job_id;
+                                            $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> <a href='"+result_url+"'>Click here to download result.</a>");
+                                            $("#bulk-action-modal-btn-close").show();
+                                        } else {
+                                            setTimeout(poll_job, 1000);
+                                        }
+                                    }
+                                });
+                            }
+                            poll_job();
+                        } else {
+                            $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
+                        }
+                    }
+                });
+                $("#bulk-action-modal").addClass("is-active");
+            });
+
+            function reset_modal(){
+                $("#bulk-action-modal").removeClass("is-active");
+                $("#bulk-action-modal-btn").show();
+                $("#bulk-action-modal-btn").attr("disabled", true);
+                $("#bulk-action-modal-btn-close").hide();
+                $('#bulk-action-modal-text').html("<i class='fas fa-spinner fa-spin'></i>");
+            }
+
+            $("#all-query-agreement").click(function() {
+                $(".bulk-danger").prop('disabled', ! this.checked);
+            });
+        </script>
+    {% else %}
+        <div class="notification">
+            You must be logged in and have appropriate permissions to use bulk processing tools.
+        </div>
+    {% endif %}
+</div>
+
+<div class="modal" id="bulk-action-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content"><div class="box">
+        <div class="box">
+            <span id="bulk-action-modal-text"><i class='fas fa-spinner fa-spin'></i></span>
+        </div>
+        <div class="section">
+            <div class="control is-pulled-right">
+                <button class="button is-link" onclick="location.reload();" id="bulk-action-modal-btn" disabled>Refresh Query</button>
+            </div>
+            <div class="control is-pulled-right">
+                <button class="button is-link" onclick='reset_modal()' id="bulk-action-modal-btn-close" style="display: none;">Close</button>
+            </div>
+        </div>
+    </div></div>
+</div>

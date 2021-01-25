@@ -5,7 +5,7 @@
 {% block content %}
 <section class="section">
     <div class="container" id="flight-plots">
-        <div class="columns" style="height:300px;">
+        <div class="columns" style="height:400px;">
             <div class="column">
                 {{ map|safe }}
             </div>
@@ -18,17 +18,28 @@
             </div>
         </div>
     </div>
-    <div class="container" id="flight-update">
-        {%  include "update.html" %}
+
+    <div class="container">
+        <h2 class="subtitle"><span id="segments-selected-count">0</span> Film Segments Selected</h2>
     </div>
-    {% if (current_user.is_authenticated and current_user.write_permission) %}
-        <div class="container" id="flight-history">
-            {%  include "history.html" %}
-        </div>
-    {% endif %}
-    {% if segment_id is not none %}
-        <script type="text/javascript">update_form_id_{{ pageref }}({{ segment_id }})</script>
-    {% endif %}
+
+    <div id="film-segments-list">
+
+    </div>
 
 </section>
+
+<script type="text/javascript">
+    function update_film_segment_list(ids) {
+        $.ajax({
+            type: "POST",
+            url: "/api/queryids",
+            data: {'ids': ids},
+            success: function(res) {
+                $("#segments-selected-count").html(ids.length);
+                $("#film-segments-list").html(res);
+            }
+        });
+    }
+</script>
 {% endblock %}

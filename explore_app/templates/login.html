@@ -8,48 +8,56 @@
             <div class="formwrapper">
                 <form method="POST">
 
-                    <h2 class="subtitle">Welcome Back</h2>
+                    <div class="columns">
+                        <div class="column is-4 is-offset-4">
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Welcome Back!</p>
+                                </div>
+                                <div class="message-body">
 
-                    {% for message in get_flashed_messages() %}
-                        <div class="alert alert-warning">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {{ message }}
+                                    {% for message in get_flashed_messages() %}
+                                        <div class="notification is-warning">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+
+                                    <div class="field">
+                                        <p class="control has-icons-left">
+                                            {{ form.email(class_='input', placeholder='Email') }}
+                                            <span class="icon is-small is-left">
+                                                <i class="fas fa-envelope"></i>
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    <div class="field">
+                                        <p class="control has-icons-left">
+                                            {{ form.password(class_='input', placeholder='Password') }}
+                                            <span class="icon is-small is-left">
+                                                <i class="fas fa-lock"></i>
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    {{ form.csrf_token }}
+
+                                    <div class="submitbutton">
+                                        {{ form.submit(class_='button is-primary')}}
+                                    </div>
+
+                                </div>
+                            </article>
+
+                            <div class="notification">
+                                <div class="loginsignup">
+                                    <p><span>Don't have an account? <a href="{{ url_for('auth_bp.signup') }}">Sign up.</a></span></p>
+                                </div>
+                            </div>
                         </div>
-                    {% endfor %}
-
-                    <div class="field">
-                        <label class="label">{{ form.email.label }}</label>
-                        <div class="control">{{ form.email }}</div>
-                        {% if form.email.errors %}
-                            <ul class="errors">
-                                {% for error in form.email.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
                     </div>
 
-                    <div class="field">
-                        <label class="label">{{ form.password.label }}</label>
-                        <div class="control">{{ form.password }}</div>
-                        {% if form.password.errors %}
-                            <ul class="errors">
-                                {% for error in form.password.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
-
-                    {{ form.csrf_token }}
-
-                    <div class="submitbutton">
-                        <input id="submit" type="submit" value="Submit">
-                    </div>
-
-                    <div class="loginsignup">
-                        <span>Don't have an account? <a href="{{ url_for('auth_bp.signup') }}">Sign up.</a></span>
-                    </div>
+                    
 
                 </form>
             </div>

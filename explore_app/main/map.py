@@ -72,6 +72,9 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
     highlight_source = ColumnDataSource(data={'X': [], 'Y': []})
     p.line(x='X', y='Y', source=highlight_source, line_width=2, color='firebrick')
 
+    p.xaxis.axis_label = "ESPG:3031 X"
+    p.yaxis.axis_label = "ESPG:3031 Y"
+
     p.add_tools(HoverTool(
         renderers=flight_glyphs,
         tooltips=[

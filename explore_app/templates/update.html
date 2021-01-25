@@ -4,34 +4,7 @@
         <div class="loader is-loading"></div>
     </div>
 
-    <nav class="navbar" role="navigation" aria-label="main navigation">
-        <div class="navbar-item">
-            <h2 class="subtitle">Image and Metadata</h2>
-        </div>
-        <div class="navbar-end">
-            <div class="navbar-item" {% if not (show_view_toggle|default(false, true)) %}style="visibility: hidden;"{% endif %}>
-                Film Display: &nbsp;
-                <fieldset id="seg-view-fieldset">
-                    <div class="switch-toggle switch-holo" style="width: 260px;">
-                        <input id="seg-view-zoom" name="seg-view" type="radio" checked>
-                        <label for="seg-view-zoom" onclick="update_seg_view_cookie('zoom')">Zoom</label>
-        
-                        <input id="seg-view-scroll" name="seg-view" type="radio">
-                        <label for="seg-view-scroll" onclick="update_seg_view_cookie('scroll')">Scroll</label>
-        
-                        <input id="seg-view-startend" name="seg-view" type="radio">
-                        <label for="seg-view-startend" onclick="update_seg_view_cookie('startend')">Start/End</label>
-        
-                        <a></a>
-                    </div>
-                </fieldset>
-            </div>
-        </div>
-    </nav>
-
-    
-
-    
+    <h2 class="subtitle">Film Segment <span id="segment-id-label-span-{{ pageref }}"></span> from Flight <span id="segment-flight-label-span-{{ pageref }}"></span></h2>
 
     <div class="container">
         <div id="flight-radargram-zoom-container-{{ pageref }}" class="flight-radargram-zoom-container">
@@ -237,13 +210,19 @@
             </nav>
         </form>
     </div>
+
+    {% if (current_user.is_authenticated and current_user.write_permission and show_history) %}
+        <div class="container">
+            {%  include "history.html" %}
+        </div>
+    {% endif %}
 </div>
 
 <script type='text/javascript'>
     // wheelzoom($("#radargram"));
 
-    const container_{{ pageref }} = document.querySelector('#flight-radargram-{{ pageref }}');
-    const viewer_{{ pageref }} = new ImageViewer(container_{{ pageref }}, { /* options */ });
+    var container_{{ pageref }} = document.querySelector('#flight-radargram-{{ pageref }}');
+    var viewer_{{ pageref }} = new ImageViewer(container_{{ pageref }}, { /* options */ });
 
     var current_id_{{ pageref }} = 0;
 
@@ -299,7 +278,6 @@
     });
 
     function update_form_id_{{ pageref }}(id, version) {
-        console.log("Loading " + id)
         $('#update-load-overlay-{{ pageref }}').addClass('loader-is-active');
 
         current_id_{{ pageref }} = id;
@@ -326,6 +304,9 @@
             $("#update_segment_needs_review-{{ pageref }}").prop('checked', data['needs_review']);
             $("#update_segment_id-{{ pageref }}").val(data['id']);
             $("#update_segment_notes-{{ pageref }}").val(data['notes']);
+
+            $("#segment-id-label-span-{{ pageref }}").html(data['id']);
+            $("#segment-flight-label-span-{{ pageref }}").html(data['flight']);
 
             // Update next/previous buttons
             if(data['next_by_frame']) {

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}radarfilm.studio{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container is-max-desktop">
+        <div class="content has-text-centered">
+            <p><img src="/static/logo-with-text.png" alt="radarfilm.studio logo" style="max-width:600px;" /></p>
+        </div>
+        <div class="content">
+            <p>
+                This website provides an interface to browse, label, and download nearly 1000 rolls of digitized optical
+                film containing data from the earliest large-scale ice-penetrating radar survey of Antarctica. The data
+                available here was gathered in the late 1960s and 1970s as part of an Antarctic airborne geophysical survey.
+                Conducted by an international consortium of American, British and Danish geoscientists, the airborne
+                surveys used a converted American military C-130 long-range aircraft. The decade-long effort involved
+                crisscrossing Antarctica repeatedly, covering a total of about a quarter million line-miles, and using
+                ice-penetrating radar to peer beneath the surface down to a depth of about 3 miles.
+            </p>
+            <p class="has-text-centered">
+                <img src="https://exhibits.stanford.edu/images/3334/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="An American military C-130 cargo plane that was converted for Antarctic radar surveys at Williams Field in Antarctica’s McMurdo Sound." />
+                <img src="https://exhibits.stanford.edu/images/3336/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="" />
+                <img src="https://exhibits.stanford.edu/images/3333/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="" />
+                <img src="https://exhibits.stanford.edu/images/3338/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="" />
+                <img src="https://exhibits.stanford.edu/images/3332/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="" />
+                <img src="https://exhibits.stanford.edu/images/3335/full/!400,400/0/default.jpg" style="max-height: 200px;"
+                    title="" />
+            </p>
+            <p class="has-text-centered is-size-6 is-italic">Images courtesy of the Scott Polar Research Institute.</p>
+            <p>
+                This website was created as part of a collaboration between Stanford University and the Scott Polar
+                Research Institute (SPRI) at Cambridge University to digitize and make publicly available the archived
+                data from this survey campaign.
+            </p>
+            <p>
+                Many people across multiple research groups and countries have contributed to making this data available.
+                The data itself is available under a Creative Commons license. Please see our
+                <a href="/docs/citation">Contributors, Licensing, and Citation</a>
+                page for details on the usage of this data, requested citations, and a list of contributors.
+            </p>
+            <p>
+                We encourage you to briefly review our tutorial by clicking "Tell me how to use this" below.
+            </p>
+        </div>
+        <div class="content">
+            <nav class="level">
+                <div class="level-item">
+                    <div class="field is-grouped">
+                        <p class="control">
+                            <a class="button is-info" href="/docs/start" title="View a tutorial">
+                                <i class="fa fa-info-circle" aria-hidden="true"></i> &nbsp; Tell me how to use this
+                            </a>
+                        </p>
+                        <p class="control">
+                            <a class="button is-primary" href="/map" title="Launch the map">
+                                Explore the map &nbsp; <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </nav>
+        </nav>
+    </div>
+</section>
+{% endblock %}

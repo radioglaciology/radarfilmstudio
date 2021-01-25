@@ -2,7 +2,7 @@
 
 ## Usage
 
-This tool is hosted at https://spri-explore.herokuapp.com/
+This tool is hosted at http://radarfilm.studio/
 
 You can browse the film freely without an account. To see some thing and do
 anything, you'll need an account with write permissions. Ask Thomas for help
@@ -14,7 +14,7 @@ to know. If you want to work on developing this tool, keep reading.
 ## Architecture
 
 This tool is designed to facilitate the exploration, metadata tagging, and
-processing of SPRI film data. The tool itself it a Python app using the Flask
+processing of SPRI film data. The tool itself is a Python app using the Flask
 microframework.
 
 The scanned film images are stored in a publicly-available S3 bucket. This tool
@@ -28,6 +28,11 @@ This tool is currently deployed in a docker container to Heroku.
 ### Database setup
 
 TODO
+
+#### Other local postgresql help
+
+Access psql prompt: `sudo -i -u postgres`
+May need to change in `pg_hba.conf`: `peer` to `md5` for user `postgres`
 
 ### Environment variables
 
@@ -102,5 +107,14 @@ This will upload and build the docker container. Once complete, you can release 
 
 ## Database backup and restore
 
-TODO
+To capture a backup on Heroku and then download it:
+
+`heroku pg:backups:capture --app spri-explore`
+`heroku pg:backups:download b004 --app spri-explore`
+
+This creates a local file `latest.dump` with a backup of the production database.
+
+Pulling the production database to a local database can be done this way:
+
+`PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull HEROKU_POSTGRESQL_BRONZE <local db> --app spri-explore`
 

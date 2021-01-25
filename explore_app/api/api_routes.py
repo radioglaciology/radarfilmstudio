@@ -3,14 +3,16 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 import requests
+import time
+import uuid
 
-from flask import Blueprint, request, send_file, send_from_directory, redirect
+from flask import Blueprint, request, send_file, send_from_directory, redirect, render_template
 from flask_restful import Api, Resource
 from flask_login import current_user
 from sqlalchemy_continuum.utils import count_versions
 
 from flask import current_app as app
-from .. import db, ma, continuum
+from .. import db, ma, continuum, scheduler
 
 from explore_app.film_segment import FilmSegment
 
@@ -29,7 +31,6 @@ class FilmSegmentSchema(ma.Schema):
 
 
 segment_schema = FilmSegmentSchema()
-
 
 def has_write_permission(current_user):
     if not current_user.is_authenticated:

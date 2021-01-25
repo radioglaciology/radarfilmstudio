@@ -74,7 +74,7 @@ def signup():
                 db.session.commit()  # Create new user
                 app.logger.debug(f"Comitted. Logging in...")
                 login_user(user)  # Log in as newly created user
-                return redirect(url_for('main_bp.map_page'), code=400)
+                return redirect(url_for('main_bp.map_page'))
             else:
                 flash('A user already exists with that email address.')
                 return redirect(url_for('auth_bp.signup'))

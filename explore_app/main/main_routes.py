@@ -49,6 +49,9 @@ def before_app_first_request():
 
 
 @main_bp.route('/')
+def landing_page():
+    return render_template("landing.html", breadcrumbs=[('Explorer', '/')])
+
 @main_bp.route('/map/')
 def map_page():
     script, divs = components(all_flights_map)
@@ -74,18 +77,19 @@ def flight_page(flight_id):
 
     return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html,
                             segment_id=segment_id, map_controls=map_controls_html,
-                           pageref=0, show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
+                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
 
 @main_bp.route('/query/action', methods=["POST"])
 def query_bulk_action():
     t = time.time()
-    if not has_write_permission(current_user):
-        return "You're not logged in or don't have the appropriate permissions."
-
     qid = request.form['query_id']
     action_type = request.form['action_type']
     scope = request.form['scope']
+
+    if not (has_write_permission(current_user) or (action_type == 'stitch')):
+        return "You're not logged in or don't have the appropriate permissions."
+
     if not qid or (not (qid in query_cache)):
         return "No query id specified or query id invalid. If you've had this page open more than an hour, your query "\
                "may have expired. "
@@ -129,6 +133,9 @@ def query_bulk_action():
         scale_y = float(request.form.get('scale_y', 1))
         flip = request.form.get('flip', "")
 
+        if ((query.count() > 10) or image_type != 'jpg') and not has_write_permission(current_user):
+            return "Must be logged in with appropriate permissions to stitch more than 10 images."
+
         if query.count() > 10 and image_type != 'jpg':
             return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
 
@@ -162,7 +169,6 @@ def get_output_image(job_id):
         return send_from_directory(tmp_path, job.result['filename'], as_attachment=True)
     else:
         return "Job not complete", 202
-
 
 @main_bp.route('/query')
 def query_results():
@@ -264,11 +270,27 @@ def query_results():
 
     segs = query_page.all()
     return render_template("queryresults.html", segments=segs, show_view_toggle=True, show_history=show_history,
-                           n_total_results=n_total_results, n_pages=n_pages, current_page=current_page,
+                           n_total_results=n_total_results, n_pages=n_pages, current_page=current_page, paginate=True,
                            next_page=next_page, prev_page=prev_page, page_map=pages, query_id=qid,
                            enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/'), ('Query Results', url_for('main_bp.query_results'))])
 
+
+# List of results for set of film segments
+@main_bp.route('/api/queryids', methods=["POST"])
+def query_id_results():
+    segment_ids = request.form.getlist('ids[]')
+    segs = FilmSegment.query.filter(FilmSegment.id.in_(segment_ids)).all()
+
+    # Record this query (temporarily)
+    query_log = {'full_query': [x.id for x in segs],
+                 'timestamp': time.time()}
+    qid = str(uuid.uuid4())
+    query_cache[qid] = query_log
+
+    return render_template("queryresultslist.html", segments=segs, show_view_toggle=True, show_history=True,
+                            n_total_results=len(segs), stitch_preview=(len(segs) < 10),
+                           query_id=qid, enable_tiff=app.config['ENABLE_TIFF'], paginate=False)
 
 @main_bp.route('/update_form/<int:id>/')
 def update_page(id):
@@ -319,7 +341,7 @@ def update_stats():
         global flight_progress_stats_updated
         flight_progress_stats_updated = time.time()
 
-@scheduler.task('interval', id='clear_query_cache', seconds=(60*60))
+@scheduler.task('interval', id='clear_main_query_cache', seconds=(60*60))
 def clear_query_cache():
     with db.app.app_context():
         for k in list(query_cache):

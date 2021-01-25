@@ -7,101 +7,74 @@
         <div class="container">
             <div class="formwrapper">
                 <form method="POST">
-                    <h2 class="subtitle">Sign Up</h2>
 
-                    {% for message in get_flashed_messages() %}
-                        <div class="alert alert-warning">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            {{ message }}
+                    <div class="columns">
+                        <div class="column is-4 is-offset-2">
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    <p>Sign Up</p>
+                                </div>
+                                <div class="message-body">
+
+                                    {% for message in get_flashed_messages() %}
+                                        <div class="notification is-warning">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+
+                                    {% for field in [form.invite_code, form.first_name, form.last_name, form.email, form.password, form.confirm] %}
+                                        <div class="field">
+                                            <div class="field">
+                                                <label class="label">{{ field.label }}</label>
+                                            </div>
+                                            <div class="field">
+                                                <p class="control">
+                                                    {{ field(class_='input') }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {% if field.errors %}
+                                            <div class="notification is-warning">
+                                                <ul class="errors">
+                                                    {% for error in field.errors %}
+                                                        <li><i class="fas fa-exclamation-triangle"></i> {{ error }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {{ form.csrf_token }}
+
+                                    <div class="submitbutton">
+                                        {{ form.submit(class_='button is-primary')}}
+                                    </div>
+
+                                </div>
+                            </article>
                         </div>
-                    {% endfor %}
-
-                    <div class="field">
-                        <fieldset class="invite_code">
-                            <label class="label">{{ form.invite_code.label }}</label>
-                            <div class="control">{{ form.invite_code }}</div>
-                            {% if form.invite_code.errors %}
-                                <ul class="errors">
-                                    {% for error in form.invite_code.errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </fieldset>
-                    </div>
-
-                    <div class="field">
-                        <fieldset class="first_name">
-                            <label class="label">{{ form.first_name.label }}</label>
-                            <div class="control">{{ form.first_name }}</div>
-                            {% if form.first_name.errors %}
-                                <ul class="errors">
-                                    {% for error in form.first_name.errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </fieldset>
-                    </div>
-
-                    <div class="field">
-                        <fieldset class="last_name">
-                            <label class="label">{{ form.last_name.label }}</label>
-                            <div class="control">{{ form.last_name }}</div>
-                            {% if form.last_name.errors %}
-                                <ul class="errors">
-                                    {% for error in form.last_name.errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </fieldset>
-                    </div>
-
-                    <fieldset class="email">
-                        {{ form.email.label }}
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <ul class="errors">
-                                {% for error in form.email.errors %}
-                                    <li>{{ error }}</li>{% endfor %}
-                            </ul>
-                        {% endif %}
-                    </fieldset>
-
-                    <fieldset class="password">
-                        {{ form.password.label }}
-                        {{ form.password }}
-                        {% if form.password.errors %}
-                            <ul class="errors">
-                                {% for error in form.password.errors %}
-                                    <li>{{ error }}</li>{% endfor %}
-                            </ul>
-                        {% endif %}
-                    </fieldset>
-
-                    <fieldset class="confirm">
-                        {{ form.confirm.label }}
-                        {{ form.confirm }}
-                        {% if form.confirm.errors %}
-                            <ul class="errors">
-                                {% for error in form.confirm.errors %}
-                                    <li>{{ error }}</li>{% endfor %}
-                            </ul>
-                        {% endif %}
-                    </fieldset>
-
-                    {{ form.csrf_token }}
-
-                    <div class="submitbutton">
-                        <input id="submit" type="submit" value="Submit">
+                        <div class="column is-4">
+                            <div class="notification loginsignup">
+                                <span>Already have an account? <a href="{{ url_for('auth_bp.login') }}">Log in.</a></span>
+                            </div>
+                            <div class="notification">
+                                <p>
+                                    Accounts are currently available by invitation only.
+                                    You do not need an account to browse or download the data.
+                                    You only need one to edit data or use some more resource-intensive tools.
+                                </p>
+                                <p>
+                                    If you need an account and don't have an invite code, please
+                                    <a href="/docs/contact">get in touch with us</a>.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                 </form>
 
-                <div class="loginsignup">
-                    <span>Already have an account? <a href="{{ url_for('auth_bp.login') }}">Log in.</a></span>
-                </div>
+                
             </div>
         </div>
     </section>
