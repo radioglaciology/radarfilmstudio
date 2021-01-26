@@ -13,6 +13,31 @@ from cartopy import crs
 
 import pandas as pd
 
+from flask import current_app as app
+
+
+# BlueMarble_ShadedRelief_Bathymetry
+    # MEaSUREs_Ice_Velocity_Antarctica
+
+map_tile_sources = [
+    {
+        "name": "Land/Water Mask",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3031/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2016-01-08T00:00:00Z&LAYERS=SCAR_Land_Water_Map,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "© <a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap</a> contributors. Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    },
+    {
+        "name": "Blue Marble",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3031/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2016-01-08T00:00:00Z&LAYERS=BlueMarble_ShadedRelief_Bathymetry,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "MODIS <a href='https://earthobservatory.nasa.gov/features/BlueMarble' target='_blank'>Cloud-Free Composite</a>. Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    },
+    {
+        "name": "MEaSUREs Ice Velocity",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3031/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2011-01-08T00:00:00Z&LAYERS=MEaSUREs_Ice_Velocity_Antarctica,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "<a href='https://nsidc.org/data/nsidc-0484/versions/1?_ga=2.175160290.1195904407.1611612195-1769237132.1578334180', target='_blank'>MEaSUREs Ice Velocity</a>.  Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    }
+]
+
+
 def load_flight_lines(positioning_dir):
     flight_lines = {}
 
@@ -59,18 +84,21 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
 
     p = figure(match_aspect=True, tools=['pan,wheel_zoom,box_zoom,reset,tap'])
 
-    #points = p.circle([0], [0]) # TODO: Should be McMurdo at (166.668, -77.846)
-
     data_sources = []
     flight_glyphs = []
+
+    for df in flight_lines:
+        data_source = ColumnDataSource(data=df)
+        l_b = p.line(x='X', y='Y', source=data_source, color='white', line_width=2)
+
     for df in flight_lines:
         data_source = ColumnDataSource(data=df)
         data_sources.append(data_source)
-        l = p.line(x='X', y='Y', source=data_source)
+        l = p.line(x='X', y='Y', source=data_source, color=app.config["COLOR_PRIMARY"], line_width=1)
         flight_glyphs.append(l)
 
     highlight_source = ColumnDataSource(data={'X': [], 'Y': []})
-    p.line(x='X', y='Y', source=highlight_source, line_width=2, color='firebrick')
+    p.scatter(x='X', y='Y', source=highlight_source, line_width=3, color=app.config["COLOR_ACCENT"])
 
     p.xaxis.axis_label = "ESPG:3031 X"
     p.yaxis.axis_label = "ESPG:3031 Y"
@@ -83,27 +111,35 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
         ]
     ))
 
-    # TODO tile sources
+    
     tile_options = {}
-    tile_options[
-        'url'] = 'https://ops.cresis.ku.edu/geoserver/antarctic/wms?LAYERS=antarctic:antarctica_coastline&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image/png&SRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}&WIDTH=256&HEIGHT=256'
-        #'url'] = 'https://ops.cresis.ku.edu/geoserver/antarctic/wms?LAYERS=antarctic:antarctica_measures_velocity_log_magnitude&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image/png&SRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}&WIDTH=256&HEIGHT=256'
-    tile_options['attribution'] = """cresis"""
+    tile_options['url'] = map_tile_sources[0]['url']
+    tile_options['attribution'] = map_tile_sources[0]['attribution']
     tile_source = BBoxTileSource(**tile_options)
     ts_glyph = p.add_tile(tile_source)
     ts_glyph.level = 'underlay'
 
-    cb_tile_select = CustomJS(args=dict(tile_source=tile_source), code="""
-                //var selected_color = cb_obj.value;
-                if (cb_obj.value == 'Coastline') {
-                    tile_source.url = 'https://ops.cresis.ku.edu/geoserver/antarctic/wms?LAYERS=antarctic:antarctica_coastline&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image/png&SRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}&WIDTH=256&HEIGHT=256';
-                } else if (cb_obj.value == 'Surface Velocity') {
-                    tile_source.url = 'https://ops.cresis.ku.edu/geoserver/antarctic/wms?LAYERS=antarctic:antarctica_measures_velocity_log_magnitude&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image/png&SRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}&WIDTH=256&HEIGHT=256';
-                }
-            """)
+    # Create tile change code
+    tile_select_code = ""
+    first = True
+    for ts in map_tile_sources:
+        if not first:
+            tile_select_code += " else "
+        else:
+            first = False
+        
+        tile_select_code += f"""if (cb_obj.value == "{ts["name"]}") {{
+    tile_source.url = "{ts["url"]}";
+    tile_source.attribution = "{ts["attribution"]}";
+    $(".bk-tile-attribution").html("{ts["attribution"]}");
+}}"""
+    # Manually setting the tile attribution div is a bit of a hack. Updating the attribution in the tile source does not
+    # cause a change in what is displayed, so this is a workaround for now.
 
-    tile_select = Select(value="Coastline",
-                          options=["Coastline", "Surface Velocity", "BedMachine Mask"])
+    cb_tile_select = CustomJS(args=dict(tile_source=tile_source), code=tile_select_code)
+
+    tile_select = Select(value=map_tile_sources[0]['name'],
+                          options=[ts['name'] for ts in map_tile_sources])
     tile_select.js_on_change('value', cb_tile_select)
 
     if len(flight_lines) > 1:
