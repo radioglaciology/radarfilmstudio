@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}radarfilm.studio{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container is-max-desktop">
+        <div class="content has-text-centered">
+            <p><img src="/static/logo-with-text.png" alt="radarfilm.studio logo" style="max-width:600px;" /></p>
+        </div>
+        <div class="content">
+            <p class="notification is-primary">Questions? Feel free to <a href="/docs/contact">get in touch with us</a>.</p>
+
+            <h2 class="subtitle">Data License and Citation</h2>
+            <p>
+                All Antarctic film images and generated derivaties presented here are copyright Dustin Schroeder and
+                the Scott Polar Research Institute, 2018. The images are licensed under a
+                <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank">Creative Commons Attribution 3.0 Unported License</a>.
+            </p>
+            <p>
+                If you make use of this data in a publication, we request that you cite the following paper describing
+                the process of acquiring this data:
+            </p>
+
+            <blockquote>
+                Dustin M. Schroeder, Julian A. Dowdeswell, Martin J. Siegert, Robert G. Bingham, Winnie Chu, Emma J. MacKie, Matthew R. Siegfried, Katherine I. Vega, John R. Emmons, and Keith Winstein. Multidecadal observations of the Antarctic ice sheet from restored analog radar records, <em>Proceedings of the National Academy of Sciences</em>, September 17, 2019 116 (38) 18867-18873. <a href="https://doi.org/10.1073/pnas.1821646116">https://doi.org/10.1073/pnas.1821646116</a>.
+            </blockquote>
+            
+            <h2 class="subtitle">About this website</h2>
+            <p>
+                This website was created to facilitate public access to this data. It is built and maintained by
+                the <a href="https://radioglaciology.group/">Stanford Radio Glaciology Group</a>. We hope you enjoy it!
+            </p>
+            <p>
+                The website itself is open source (MIT License). You can check out the source on
+                <a href="https://github.com/radioglaciology/spri-explore" target="_blank">GitHub</a>.
+            </p>
+            <h2 class="subtitle">Contributors</h2>
+            <p>
+                TODO
+            </p>
+            <h2 class="subtitle">Additional Data Sources</h2>
+            <p>
+                We acknowledge the use of imagery provided by services from
+                <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs" target="_blank">NASA's Global Imagery Browse Services (GIBS)</a>,
+                part of NASA's Earth Observing System Data and Information System (EOSDIS).
+            </p>
+            <p>
+                GIBS provides the background maps, optical imagery, and survey velocity data for the flight maps on this
+                site. Specific data sources for each of these are identified in the bottom right of each map.
+            </p>
+            
+        </div>
+        
+    </div>
+</section>
+{% endblock %}

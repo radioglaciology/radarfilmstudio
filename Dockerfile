@@ -13,5 +13,5 @@ RUN echo "source activate film" > ~/.bashrc
 ENV PATH /opt/conda/envs/film/bin:$PATH
 ENV CONDA_DEFAULT_ENV film
 
-CMD gunicorn --bind 0.0.0.0:$PORT --log-level=debug wsgi:app
+CMD python worker.py & gunicorn --bind 0.0.0.0:$PORT --log-level=debug wsgi:app
 #CMD python wsgi.py

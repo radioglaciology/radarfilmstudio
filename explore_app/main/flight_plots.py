@@ -211,6 +211,11 @@ def make_linked_flight_plots(session, flight_id, flight_lines=None):
 
                 cbd_source.change.emit();
                 cbd_source.selected.change.emit();
+
+                //var change_callbacks = cbd_source.selected.js_property_callbacks["change:indices"];
+                //for (var i=0; i < change_callbacks.length; i++) {
+                //    change_callbacks[i].execute(cbd_source.selected, null);
+                //}
             }
         
         """))

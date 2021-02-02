@@ -52,6 +52,18 @@ def before_app_first_request():
 def landing_page():
     return render_template("landing.html", breadcrumbs=[('Explorer', '/')])
 
+@main_bp.route('/docs/start')
+def docs_start_page():
+    return render_template("docs/start.html", breadcrumbs=[('Explorer', '/')])
+
+@main_bp.route('/docs/citation')
+def docs_citation_page():
+    return render_template("docs/citation.html", breadcrumbs=[('Explorer', '/')])
+
+@main_bp.route('/docs/contact')
+def docs_contact_page():
+    return render_template("docs/contact.html", breadcrumbs=[('Explorer', '/')])
+
 @main_bp.route('/map/')
 def map_page():
     script, divs = components(all_flights_map)
