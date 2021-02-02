@@ -16,16 +16,16 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
-    <script src="/static/wheelzoom/wheelzoom.js"></script>
-    <script src="/static/iv-viewer/iv-viewer.min.js"></script>
+    <script src="{{ url_for('static', filename='wheelzoom/wheelzoom.js') }}"></script>
+    <script src="{{ url_for('static', filename='iv-viewer/iv-viewer.min.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 
     <link href="https://cdn.jsdelivr.net/css-toggle-switch/latest/toggle-switch.css" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="/static/iv-viewer/iv-viewer.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='iv-viewer/iv-viewer.min.css') }}">
 
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 

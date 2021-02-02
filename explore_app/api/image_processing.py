@@ -17,13 +17,16 @@ def worker_load_image(filename, film_images_dir):
         return Image.open(os.path.join(film_images_dir, filename))
 
 
-def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, output_dir, film_images_dir):
+def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, film_images_dir):
     print(f'Starting stitch with qid {qid}')
 
-    images = []  # TODO: This needs to move to a separate thread!
+    if image_type == 'jpg' or image_type == 'JPG':
+        image_type = 'JPEG'
+
+    images = []
     sum_x = 0
     for img_path in img_paths:
-        if image_type == 'jpg':
+        if image_type == 'JPEG':
             pre, ext = os.path.splitext(img_path)
             img_path = pre + "_lowqual.jpg"
             filename_out = f"stitch-{qid}.png"
@@ -34,7 +37,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, output_dir
         if flip == 'x':
             im = ImageOps.mirror(im)
 
-        if image_type == 'jpg':
+        if image_type == 'JPEG':
             im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
         else:
             im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
@@ -53,12 +56,17 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, output_dir
 
     if flip == 'x':
         im_output = ImageOps.mirror(im_output)
+    
+    img_io = BytesIO()
+    im_output.save(img_io, image_type)
+    img_io.seek(0)
 
-    im_output.save(os.path.join(output_dir, filename_out))
 
     print(f"Completed stitch at {time.time()}")
 
     return {
         'filename': filename_out,
+        'image_type': image_type,
+        'image': img_io,
         'timestamp': time.time()
     }

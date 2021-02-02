@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, url_for, g, redirect, request, send_from_directory, abort
+from flask import Blueprint, render_template, url_for, g, redirect, request, send_from_directory, abort, send_file
 from rq.job import Job
 
 from flask import current_app as app
@@ -25,6 +25,8 @@ import math
 from collections import OrderedDict
 import uuid
 import os
+import io
+import sys
 from datetime import datetime
 
 main_bp = Blueprint('main_bp', __name__,
@@ -154,7 +156,7 @@ def query_bulk_action():
         query = query.order_by(FilmSegment.first_cbd)
         img_paths = [f.path for f in query.all()]
 
-        job = queue.enqueue(stitch_images, args=(img_paths, image_type, flip, scale_x, scale_y, qid, app.config['TMP_OUTPUTS_DIR'], app.config['FILM_IMAGES_DIR']))
+        job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid, app.config['FILM_IMAGES_DIR']))
         return f"started:{job.get_id()}"
 
     else:
@@ -177,8 +179,10 @@ def get_output_image(job_id):
     job = Job.fetch(job_id, connection=conn)
 
     if job.is_finished:
-        tmp_path = os.path.join(os.getcwd(), app.config['TMP_OUTPUTS_DIR'])
-        return send_from_directory(tmp_path, job.result['filename'], as_attachment=True)
+        img_io = job.result['image']
+
+        return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
+                         as_attachment=True, attachment_filename=job.result['filename'])
     else:
         return "Job not complete", 202
 

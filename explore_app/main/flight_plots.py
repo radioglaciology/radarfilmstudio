@@ -4,7 +4,7 @@ from bokeh.models import TapTool, CustomJS, CDSView, CustomJSFilter, HoverTool
 from bokeh.embed import components
 from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
-from bokeh.models import Toggle, Select, CustomJS, Circle
+from bokeh.models import Toggle, Select, CustomJS, Circle, WheelZoomTool
 
 import pandas as pd
 import matplotlib
@@ -84,7 +84,7 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
     ''')
     view = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
 
-    p = figure(tools=['pan,wheel_zoom,box_zoom,box_select,lasso_select,reset,tap'])
+    p = figure(tools=['pan,box_zoom,wheel_zoom,box_select,lasso_select,reset,tap'], active_scroll='wheel_zoom')
 
 
 
@@ -127,6 +127,8 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
     color_select = Select(value="Color by Verified",
                           options=["Color by Verified", "Color by Reel", "Color by Review", "Color by Frequency"])
     color_select.js_on_change('value', cb_cselect)
+
+    p.toolbar.active_scroll = p.select_one(WheelZoomTool)
 
     if return_plot:
         return p, column(toggle_verified, toggle_junk, toggle_z, toggle_a, color_select), source

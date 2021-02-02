@@ -4,12 +4,9 @@ setup:
       as: DATABASE
 build:
   docker:
-    web: Dockerfile
-    worker: Dockerfile
+    web: Dockerfile.web
+    worker: Dockerfile.worker
 release:
   command:
     - flask db upgrade
   image: worker
-run:
-  web: gunicorn --bind 0.0.0.0:$PORT --log-level=debug wsgi:app
-  worker: python worker.py
