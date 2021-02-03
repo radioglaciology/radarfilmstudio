@@ -28,6 +28,7 @@ import os
 import io
 import sys
 from datetime import datetime
+import pandas as pd
 
 main_bp = Blueprint('main_bp', __name__,
                     template_folder='templates',
@@ -42,6 +43,13 @@ flight_progress_stats_updated = None
 query_cache = {}
 images_cache = {}
 
+def make_contributors_df():
+    contributors_df = pd.read_csv('contributors.csv', sep=' - ', comment='#')
+    contributors_df['last_name'] = [n.split(' ')[-1] for n in contributors_df['name']]
+    contributors_df.sort_values(['order', 'last_name'], inplace=True)
+    return contributors_df
+
+contributors_df = make_contributors_df()
 
 @main_bp.before_app_first_request
 def before_app_first_request():
@@ -60,7 +68,7 @@ def docs_start_page():
 
 @main_bp.route('/docs/citation')
 def docs_citation_page():
-    return render_template("docs/citation.html", breadcrumbs=[('Explorer', '/')])
+    return render_template("docs/citation.html", contributors=contributors_df, breadcrumbs=[('Explorer', '/')])
 
 @main_bp.route('/docs/contact')
 def docs_contact_page():

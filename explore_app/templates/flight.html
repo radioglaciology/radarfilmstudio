@@ -5,14 +5,14 @@
 {% block content %}
 <section class="section">
     <div class="container" id="flight-plots">
-        <div class="columns" style="height:400px;">
-            <div class="column">
+        <div class="columns is-vcentered">
+            <div class="column" style="max-height:400px; height: 400px;">
                 {{ map|safe }}
             </div>
-            <div class="column">
+            <div class="column" style="max-height:400px; height: 400px;">
                 {{ cbd_plot|safe }}
             </div>
-            <div class="column is-one-quarter">
+            <div class="column is-2" style="">
                 {{ cbd_controls|safe }}
                 {{ map_controls|safe }}
             </div>

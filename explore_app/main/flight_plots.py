@@ -141,9 +141,11 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
 
 def make_linked_flight_plots(session, flight_id, flight_lines=None):
     p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, None, None, return_plot=True)
+    cbd_controls.sizing_mode = 'stretch_both'
 
     map_dict = make_bokeh_map(None, None, flight_id=flight_id, title=f"Flight {flight_id}",
                                          flight_lines=flight_lines, return_components=True)
+    
 
     # Selecting data updates list of film segments
     cbd_source.selected.js_on_change('indices',
@@ -160,6 +162,8 @@ def make_linked_flight_plots(session, flight_id, flight_lines=None):
 
     if map_dict is not None:
         p_map, map_data_sources, map_highlight_source = map_dict['map'], map_dict['data_sources'], map_dict['highlight_source'] # unpack map parts we need
+
+        map_dict['tile_select'].sizing_mode = 'stretch_width'
 
         # Setup cross-linking between CDB and map plots
         cbd_source.selected.js_on_change('indices',

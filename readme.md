@@ -21,7 +21,15 @@ The scanned film images are stored in a publicly-available S3 bucket. This tool
 manages a database that maps these images to metadata describing each image's
 flight, order number, and other parameters.
 
-This tool is currently deployed in a docker container to Heroku.
+Heroku apps are built out of a formation of individual small dynos. We have two
+types of dynos here: web and worker. The web dynos are responsible for serving
+all requests to the website. The worker dynos offload long-running image processing
+(specifically stitching images togehter) to avoid slowing down the web dynos.
+
+Both dynos are deployed using (nearly identical) Docker containers specified by
+the `Dockerfile.web` and `Dockerfile.worker` files.
+
+Interaction between the web and worker dynos uses Redis Queue.
 
 ## Testing locally
 
@@ -63,7 +71,7 @@ within the `conda` environment if needed.
 If you update the environment at all (install or upgrade any package), you'll
 need to save your changes:
 
-`conda env export > environment.yml`
+`conda env export --no-build > environment.yml`
 
 You should probably immediately attempt to re-build the docker image after doing
 this to make sure you didn't break anything.
@@ -97,13 +105,13 @@ See https://devcenter.heroku.com/articles/container-registry-and-runtime for ref
 Please build and test your docker image locally. If it doesn't run locally, it's
 highly unlikely to run on Heroku.
 
-To push your docker container to Heroku:
+To push your docker containers to Heroku:
 
-`heroku container:push web --app=spri-explore`
+`heroku container:push --recursive --app=spri-explore`
 
-This will upload and build the docker container. Once complete, you can release it, which will make it active on the web:
+This will upload and build the docker containers. Once complete, you can release it, which will make it active on the web:
 
-`heroku container:release web --app=spri-explore`
+`heroku container:release web worker --app=spri-explore`
 
 ## Database backup and restore
 
@@ -111,6 +119,8 @@ To capture a backup on Heroku and then download it:
 
 `heroku pg:backups:capture --app spri-explore`
 `heroku pg:backups:download b004 --app spri-explore`
+
+(Repalce `b004` with whatever the id of the backup is.)
 
 This creates a local file `latest.dump` with a backup of the production database.
 
