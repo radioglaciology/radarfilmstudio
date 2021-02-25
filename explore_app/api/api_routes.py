@@ -93,9 +93,6 @@ class FilmSegmentResource(Resource):
         if not request.is_json: # only accept json formatted update requests
             return None, 400
 
-        print("Scope type: ", request.json['scope_type'])
-        print("Instrument type: ", request.json['instrument_type'])
-
         if 'flight' in request.json:
             seg.flight = request.json['flight']
         if 'first_cbd' in request.json:
@@ -139,7 +136,6 @@ def film_segment_history(id):
 
     seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
 
-    print(count_versions(seg))
     history = []
     for version in range(count_versions(seg)):
         history.append(seg.versions[version].changeset)
