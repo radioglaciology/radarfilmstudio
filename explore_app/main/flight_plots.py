@@ -18,14 +18,20 @@ from explore_app.main.map import make_bokeh_map
 from flask import current_app as app
 
 
-def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=0):
-    df = pd.read_sql(session.query(FilmSegment).filter(FilmSegment.flight == flight_id).statement, session.bind)
+def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=False, pageref=0, dataset='antarctica', flight_date=None):
+    if flight_date is None:
+        df = pd.read_sql(FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
+            .filter(FilmSegment.flight == flight_id).statement, session.bind)
+    else:
+        df = pd.read_sql(FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
+            .filter(FilmSegment.flight == flight_id, FilmSegment.raw_date == flight_date).statement, session.bind)
 
     # Add colormaps to plot
-    norm_reels = matplotlib.colors.Normalize(vmin=df['reel'].min(), vmax=df['reel'].max(), clip=True)
-    mapper_reels = plt.cm.ScalarMappable(norm=norm_reels, cmap=plt.cm.viridis)
+    unique_reels = df['reel'].unique()
+    reel_map = {r: idx for idx, r in enumerate(unique_reels)}
+    reel_cm = plt.cm.get_cmap('viridis', len(unique_reels))
 
-    df['Color by Reel'] = df['reel'].apply(lambda x: mcolors.to_hex(mapper_reels.to_rgba(x)))
+    df['Color by Reel'] = df['reel'].apply(lambda x: mcolors.to_hex(reel_cm.colors[reel_map[x]]))
     df['Color by Verified'] = df['is_verified'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
     df['Color by Review'] = df['needs_review'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
     df['Color by Frequency'] = df['instrument_type'].apply(lambda x: app.config['COLOR_REDWOOD'] if x == FilmSegment.RADAR_60MHZ else (app.config['COLOR_PALO_ALOT'] if x == FilmSegment.RADAR_300MHZ else app.config['COLOR_GRAY']))
@@ -139,12 +145,12 @@ def make_cbd_plot(session, flight_id, width, height, return_plot=False, pageref=
         return f'\n{script}\n\n{div}\n'
 
 
-def make_linked_flight_plots(session, flight_id, flight_lines=None):
-    p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, flight_id, None, None, return_plot=True)
+def make_linked_flight_plots(session, current_user, flight_id, flight_lines=None, dataset='antarctica', flight_date=None):
+    p_cbd, cbd_controls, cbd_source = make_cbd_plot(session, current_user, flight_id, None, None, return_plot=True, dataset=dataset, flight_date=flight_date)
     cbd_controls.sizing_mode = 'stretch_both'
 
-    map_dict = make_bokeh_map(None, None, flight_id=flight_id, title=f"Flight {flight_id}",
-                                         flight_lines=flight_lines, return_components=True)
+    map_dict = make_bokeh_map(None, None, flight_id=flight_id, flight_date=flight_date, title=f"Flight {flight_id}",
+                                         flight_lines=flight_lines, return_components=True, dataset=dataset)
     
 
     # Selecting data updates list of film segments

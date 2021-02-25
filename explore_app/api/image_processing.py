@@ -9,15 +9,15 @@ from PIL import Image, ImageOps
 OVERLAP_FACTOR = 88 / 11362  # Overlap between adjacent radargram images as a percentage of the width of the image
 
 
-def worker_load_image(filename, film_images_dir):
-    if "https://" in film_images_dir:
-        response = requests.get(film_images_dir + filename)
+def worker_load_image(file_path):
+    if "https://" in file_path:
+        response = requests.get(file_path)
         return Image.open(BytesIO(response.content))
     else:
-        return Image.open(os.path.join(film_images_dir, filename))
+        return Image.open(file_path)
 
 
-def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, film_images_dir):
+def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     print(f'Starting stitch with qid {qid}')
 
     if image_type == 'jpg' or image_type == 'JPG':
@@ -33,7 +33,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid, film_image
         else:  # otherwise assume TIFF
             filename_out = f"stitch-{qid}.tiff"
 
-        im = worker_load_image(img_path, film_images_dir)
+        im = worker_load_image(img_path)
         if flip == 'x':
             im = ImageOps.mirror(im)
 

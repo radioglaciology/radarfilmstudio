@@ -44,11 +44,11 @@ def add_next_previous(seg_dict, seg):
     prev_frame = min(seg_dict['first_frame'], seg_dict['last_frame']) - 1
     next_frame = max(seg_dict['first_frame'], seg_dict['last_frame']) + 1
 
-    next_by_frame = FilmSegment.query.filter(
+    next_by_frame = FilmSegment.query_visible_to_user(current_user).filter(
         (FilmSegment.first_frame >= next_frame) & (FilmSegment.last_frame >= next_frame) & (
                 FilmSegment.reel == seg.reel) & (FilmSegment.scope_type == seg.scope_type)
     ).order_by(FilmSegment.first_frame.asc()).first()
-    prev_by_frame = FilmSegment.query.filter(
+    prev_by_frame = FilmSegment.query_visible_to_user(current_user).filter(
         (FilmSegment.first_frame <= prev_frame) & (FilmSegment.last_frame <= prev_frame) & (
                 FilmSegment.reel == seg.reel) & (FilmSegment.scope_type == seg.scope_type)
     ).order_by(FilmSegment.first_frame.desc()).first()
@@ -62,11 +62,11 @@ def add_next_previous(seg_dict, seg):
     prev_cbd = min(seg_dict['first_cbd'], seg_dict['last_cbd']) - 1
     next_cbd = max(seg_dict['first_cbd'], seg_dict['last_cbd']) + 1
 
-    next_by_cbd = FilmSegment.query.filter(
+    next_by_cbd = FilmSegment.query_visible_to_user(current_user).filter(
         (FilmSegment.first_cbd >= next_cbd) & (FilmSegment.last_cbd >= next_cbd) & (
                 FilmSegment.flight == seg.flight) & (FilmSegment.scope_type == seg.scope_type)
     ).order_by(FilmSegment.first_cbd.asc()).first()
-    prev_by_cbd = FilmSegment.query.filter(
+    prev_by_cbd = FilmSegment.query_visible_to_user(current_user).filter(
         (FilmSegment.first_cbd <= prev_cbd) & (FilmSegment.last_cbd <= prev_cbd) & (
                 FilmSegment.flight == seg.flight) & (FilmSegment.scope_type == seg.scope_type)
     ).order_by(FilmSegment.first_cbd.desc()).first()
@@ -79,7 +79,7 @@ def add_next_previous(seg_dict, seg):
 class FilmSegmentResource(Resource):
 
     def get(self, id):
-        seg = FilmSegment.query.get_or_404(id)
+        seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
         seg_dict = segment_schema.dump(seg)
         add_next_previous(seg_dict, seg)
         return seg_dict
@@ -88,7 +88,7 @@ class FilmSegmentResource(Resource):
         if not has_write_permission(current_user):
             return None, 401
 
-        seg = FilmSegment.query.get_or_404(id)
+        seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
 
         if not request.is_json: # only accept json formatted update requests
             return None, 400
@@ -127,7 +127,7 @@ seg_api.add_resource(FilmSegmentResource, '/api/segments/<int:id>')
 
 @api_bp.route('/api/segments/<int:id>/version/<int:version>')
 def film_segment_version(id, version):
-    seg = FilmSegment.query.get_or_404(id)
+    seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
     seg_dict = segment_schema.dump(seg.versions[version])
     add_next_previous(seg_dict, seg)
     return seg_dict
@@ -137,7 +137,7 @@ def film_segment_history(id):
     if not has_write_permission(current_user):
         return None, 401
 
-    seg = FilmSegment.query.get_or_404(id)
+    seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
 
     print(count_versions(seg))
     history = []
@@ -155,18 +155,18 @@ def serve_pil_image(pil_img):
     img_io.seek(0)
     return send_file(img_io, mimetype='image/jpeg')
 
-def serve_unmodified_image(filename):
-    if "https://" in app.config['FILM_IMAGES_DIR']:
-        return redirect(app.config['FILM_IMAGES_DIR'] + filename)
+def serve_unmodified_image(p):
+    if "https://" in p:
+        return redirect(p)
     else:
-        send_from_directory(app.config['FILM_IMAGES_DIR'], filename)
+        send_from_directory(p)
 
-def load_image(filename):
-    if "https://" in app.config['FILM_IMAGES_DIR']:
-        response = requests.get(app.config['FILM_IMAGES_DIR'] + filename)
+def load_image(p):
+    if "https://" in p:
+        response = requests.get(p)
         return Image.open(BytesIO(response.content))
     else:
-        return Image.open(os.path.join(app.config['FILM_IMAGES_DIR'], filename))
+        return Image.open(p)
 
 @api_bp.route('/api/radargram/jpg/<int:id>')
 @api_bp.route('/api/radargram/jpg/<int:id>.jpg')
@@ -174,9 +174,8 @@ def load_image(filename):
 @api_bp.route('/api/radargram/jpg/<int:id>/crop/first/<int:crop_w_start>')
 @api_bp.route('/api/radargram/jpg/<int:id>/crop/last/<int:crop_w_end>')
 def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None):
-    seg = FilmSegment.query.get(id)
-    pre, ext = os.path.splitext(seg.path)
-    filename = pre + "_lowqual.jpg"
+    seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first()
+    filename = seg.get_path(format='jpg')
 
     if max_height:
         im = load_image(filename)
@@ -197,5 +196,5 @@ def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None)
 @api_bp.route('/api/radargram/tiff/<int:id>')
 @api_bp.route('/api/radargram/tiff/<int:id>.tiff')
 def radargram_tiff(id):
-    seg = FilmSegment.query.get(id)
-    return serve_unmodified_image(seg.path)
+    seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first()
+    return serve_unmodified_image(seg.get_path())

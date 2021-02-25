@@ -79,6 +79,26 @@
                             </div>
                         </div>
                     </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <label class="label">
+                                Dataset
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Filter by segments from a particular collection</span>
+                                </div>
+                            </label>
+                            <div class="control">
+                                <div class="select">
+                                    <select name="dataset">
+                                        <option value="">Any</option>
+                                        <option value="antarctica" {% if request.args.get('dataset') == 'antarctica' %}selected="selected"{% endif %}>Antarctica</option>
+                                        <option value="greenland" {% if request.args.get('dataset') == 'greenland' %}selected="selected"{% endif %}>Greenland</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </nav>
             <nav class="level">

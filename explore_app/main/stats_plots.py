@@ -20,41 +20,56 @@ from flask import current_app as app
 from flask import g
 from sqlalchemy import and_
 
-flight_progress_stats = {
-    'flight_ids': [],
-    'flights': [],
-    'total_segments': [],
-    'verified': [],
-    'unverified': []
-}
-
+flight_progress_stats = {'greenland': {}, 'antarctica': {}}
 
 def update_flight_progress_stats(session):
-    distinct_ids = FilmSegment.query.filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight).distinct().all()
-    flight_ids = [x[0] for x in distinct_ids]
+    update_flight_progress_stats_dataset(session, 'antarctica', 'Antarctica ')
+    update_flight_progress_stats_dataset(session, 'greenland', 'Greenland ')
+
+def update_flight_progress_stats_dataset(session, dataset, flight_name_prefix):
+    distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight, FilmSegment.raw_date).distinct().all()
 
     verified_list = []
     unverified_list = []
     total_list = []
-    for fid in flight_ids:
-        count_verified = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.is_verified == True, FilmSegment.is_junk == False)).count()
-        count_total = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.is_junk == False)).count()
+    for fid, fdate in distinct_flights:
+        q = FilmSegment.query.filter(and_(FilmSegment.flight == fid, FilmSegment.raw_date == fdate,
+                                            FilmSegment.dataset == dataset, FilmSegment.is_junk == False))
+        count_verified = q.filter(FilmSegment.is_verified == True).count()
+        count_total = q.count()
 
         verified_list.append(count_verified)
         total_list.append(count_total)
         unverified_list.append(count_total - count_verified)
 
-    flight_progress_stats['flight_ids'] = flight_ids
-    flight_progress_stats['flights'] = [f"Flight {f}" for f in flight_ids]
-    flight_progress_stats['total_segments'] = total_list
-    flight_progress_stats['verified'] = verified_list
-    flight_progress_stats['unverified'] = unverified_list
+    def make_flight_url(id, date, dataset):
+        if date is None:
+            return f"/flight/{dataset}/{id}"
+        else:
+            return f"/flight/{dataset}/{id}/{date}"
+
+    flight_progress_stats[dataset]['flight_ids'] = [x[0] for x in distinct_flights]
+    flight_progress_stats[dataset]['flight_dates'] = [x[1] for x in distinct_flights]
+    flight_progress_stats[dataset]['url'] = [make_flight_url(x[0], x[1], dataset) for x in distinct_flights]
+    flight_progress_stats[dataset]['flights'] = [f"{flight_name_prefix}Flight {fid}{'' if (fdate is None) else ' ['+str(fdate)+']'}" for fid, fdate in distinct_flights]
+    flight_progress_stats[dataset]['total_segments'] = total_list
+    flight_progress_stats[dataset]['verified'] = verified_list
+    flight_progress_stats[dataset]['unverified'] = unverified_list
+    flight_progress_stats[dataset]['dataset'] = [dataset]*len(unverified_list)
 
 
-def make_flight_progress_bar_plot():
-    fps_df = pd.DataFrame(flight_progress_stats).sort_values(by='flight_ids', ascending=False)
+def make_flight_progress_bar_plot(include_greenland=False):
 
-    p = figure(y_range=fps_df['flights'], plot_height=20*len(flight_progress_stats['flight_ids']),
+    if include_greenland:
+        stats = {}
+        for k in flight_progress_stats['antarctica']:
+            stats[k] = flight_progress_stats['antarctica'][k] + flight_progress_stats['greenland'][k]
+    else:
+        stats = flight_progress_stats['antarctica']
+
+    fps_df = pd.DataFrame(stats).sort_values(by=['dataset', 'flight_ids'], ascending=False)
+
+    p = figure(y_range=fps_df['flights'], plot_height=20*len(stats['flight_ids']),
                toolbar_location=None, tools="hover,tap", tooltips="@$name film segments")
 
     p.hbar_stack(['verified', 'unverified'], y='flights', height=0.8,
@@ -71,7 +86,7 @@ def make_flight_progress_bar_plot():
     p.min_border_bottom = 0
     p.sizing_mode = 'stretch_width'
 
-    url = "/flight/@flight_ids/"
+    url = "@url"
     taptool = p.select(type=TapTool)
     taptool.callback = OpenURL(url=url, same_tab=True)
 

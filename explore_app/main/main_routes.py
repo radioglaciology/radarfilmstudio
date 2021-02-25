@@ -8,7 +8,7 @@ from worker import conn
 from flask_login import current_user
 
 from .map import make_bokeh_map, load_flight_lines
-from .flight_plots import make_cbd_plot, make_linked_flight_plots
+from .flight_plots import make_linked_flight_plots
 from .stats_plots import make_flight_progress_bar_plot
 from explore_app.film_segment import FilmSegment
 from .stats_plots import update_flight_progress_stats
@@ -17,6 +17,7 @@ from ..api.api_routes import has_write_permission, load_image
 from ..api.image_processing import stitch_images
 
 from sqlalchemy import and_, or_
+from sqlalchemy.sql import func
 
 from bokeh.embed import components
 
@@ -29,14 +30,21 @@ import io
 import sys
 from datetime import datetime
 import pandas as pd
+import numpy as np
 
 main_bp = Blueprint('main_bp', __name__,
                     template_folder='templates',
                     static_folder='static')
 
-flight_lines = load_flight_lines(app.config['FLIGHT_POSITIONING_DIR'])
-all_flights_map = make_bokeh_map(800, 800, flight_lines=flight_lines, return_components=True)
-all_flights_map = {k:all_flights_map[k] for k in all_flights_map if k in ['map', 'tile_select']}
+flight_lines = {
+    'antarctica': load_flight_lines(app.config['ANTARCTICA_FLIGHT_POSITIONING_DIR'], 'antarctica'),
+    'greenland': load_flight_lines(app.config['GREENLAND_FLIGHT_POSITIONING_DIR'], 'greenland')
+}
+
+all_flights_maps = {}
+for dataset in flight_lines:
+    all_flights_maps[dataset] = make_bokeh_map(800, 800, flight_lines=flight_lines[dataset], return_components=True, dataset=dataset)
+    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select']}
 
 flight_progress_stats_updated = None
 
@@ -60,34 +68,53 @@ def before_app_first_request():
 
 @main_bp.route('/')
 def landing_page():
-    return render_template("landing.html", breadcrumbs=[('Explorer', '/')])
+    return render_template("landing.html")
 
 @main_bp.route('/docs/start')
 def docs_start_page():
-    return render_template("docs/start.html", breadcrumbs=[('Explorer', '/')])
+    return render_template("docs/start.html")
 
 @main_bp.route('/docs/citation')
 def docs_citation_page():
-    return render_template("docs/citation.html", contributors=contributors_df, breadcrumbs=[('Explorer', '/')])
+    return render_template("docs/citation.html", contributors=contributors_df)
 
 @main_bp.route('/docs/contact')
 def docs_contact_page():
-    return render_template("docs/contact.html", breadcrumbs=[('Explorer', '/')])
+    return render_template("docs/contact.html")
 
 @main_bp.route('/map/')
-def map_page():
-    script, divs = components(all_flights_map)
+@main_bp.route('/map/<dataset>/')
+def map_page(dataset='antarctica'):
+    script, divs = components(all_flights_maps[dataset])
     return render_template("map.html",
-                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'],
-                            breadcrumbs=[('Explorer', '/'),
-                                        ('Map', url_for('main_bp.map_page'))])
+                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'])
 
 @main_bp.route('/flight/<int:flight_id>/')
-def flight_page(flight_id):
-    #map = make_bokeh_map(300, 300, flight_id=flight_id, title="Flight Map", flight_lines=flight_lines)
-    #cbd_plot = make_cbd_plot(db.session, flight_id, 500, 300)
+@main_bp.route('/flight/<dataset>/<int:flight_id>/')
+@main_bp.route('/flight/<dataset>/<int:flight_id>/<int:flight_date>')
+def flight_page(flight_id, dataset='antarctica', flight_date=None):
+    # If only a year is given for the date, redirect to most common flight date
+    if (flight_date is not None) and (flight_date < 100):
+        q = db.session.query(FilmSegment.flight, FilmSegment.raw_date,
+                            func.array_agg(FilmSegment.id)).filter(FilmSegment.flight == flight_id).group_by(FilmSegment.flight, FilmSegment.raw_date)
+        df = pd.read_sql(q.statement, db.session.bind)
+        df['n'] = [len(x) for x in df['array_agg_1']]
+        df['year'] = [(0 if np.isnan(x) else int(x)%100) for x in df['raw_date']]
+        df = df[df['year'] == flight_date]
 
-    map_html, cbd_html, cbd_controls_html, map_controls_html = make_linked_flight_plots(db.session, flight_id, flight_lines=flight_lines)
+        if len(df) == 0:
+            return redirect(f'/flight/{dataset}/{flight_id}/')
+        else:
+            idx = df['n'].argmax()
+            fdate = int(df.iloc[idx]['raw_date'])
+            if fdate < 100:
+                print(f"WARNING: Failed to find a valid most common raw date for dataset {dataset} and year {flight_date}")
+                fdate = ''
+            return redirect(f'/flight/{dataset}/{flight_id}/{fdate}')
+
+    map_html, cbd_html, cbd_controls_html, map_controls_html = make_linked_flight_plots(db.session, current_user, flight_id,
+                                                                    flight_lines=flight_lines[dataset], dataset=dataset,
+                                                                    flight_date=flight_date)
 
     # Check for a direct link to a specific segment to be loaded
     if 'id' in request.args:
@@ -95,12 +122,9 @@ def flight_page(flight_id):
     else:
         segment_id = None
 
-    print(app.config['ENABLE_TIFF'])
-
     return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html,
                             segment_id=segment_id, map_controls=map_controls_html,
-                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
-                           breadcrumbs=[('Explorer', '/'), (f'Flight {flight_id}', url_for('main_bp.flight_page', flight_id=flight_id))])
+                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'])
 
 @main_bp.route('/query/action', methods=["POST"])
 def query_bulk_action():
@@ -129,7 +153,7 @@ def query_bulk_action():
     else:
         return "Invalid scope specified"
 
-    query = FilmSegment.query.filter(FilmSegment.id.in_(query_ids))
+    query = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id.in_(query_ids))
 
     if action_type == 'mark_verified':
         for f in query.all():
@@ -162,9 +186,9 @@ def query_bulk_action():
             return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
 
         query = query.order_by(FilmSegment.first_cbd)
-        img_paths = [f.path for f in query.all()]
+        img_paths = [f.get_path() for f in query.all()]
 
-        job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid, app.config['FILM_IMAGES_DIR']))
+        job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid))
         return f"started:{job.get_id()}"
 
     else:
@@ -196,7 +220,7 @@ def get_output_image(job_id):
 
 @main_bp.route('/query')
 def query_results():
-    query = FilmSegment.query
+    query = FilmSegment.query_visible_to_user(current_user)
 
     # Filters
 
@@ -204,7 +228,7 @@ def query_results():
         query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
 
     if request.args.get('reel'):
-        query = query.filter(FilmSegment.reel == int(request.args.get('reel')))
+        query = query.filter(FilmSegment.reel == request.args.get('reel'))
 
     if request.args.get('verified'):
         if int(request.args.get('verified')) == 0:
@@ -214,6 +238,9 @@ def query_results():
 
     if request.args.get('scope'):
         query = query.filter(FilmSegment.scope_type == request.args.get('scope'))
+
+    if request.args.get('dataset'):
+        query = query.filter(FilmSegment.dataset == request.args.get('dataset'))
 
     if request.args.get('mincbd'):
         query = query.filter(FilmSegment.first_cbd >= int(request.args.get('mincbd')))
@@ -304,7 +331,7 @@ def query_results():
 @main_bp.route('/api/queryids', methods=["POST"])
 def query_id_results():
     segment_ids = request.form.getlist('ids[]')
-    segs = FilmSegment.query.filter(FilmSegment.id.in_(segment_ids)).all()
+    segs = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id.in_(segment_ids)).all()
 
     # Record this query (temporarily)
     query_log = {'full_query': [x.id for x in segs],
@@ -318,7 +345,7 @@ def query_id_results():
 
 @main_bp.route('/update_form/<int:id>/')
 def update_page(id):
-    seg = FilmSegment.query.get(id)
+    seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first()
     return render_template("update.html", segment=seg, enable_tiff=app.config['ENABLE_TIFF'],
                            breadcrumbs=[('Explorer', '/')])
 
@@ -332,10 +359,15 @@ def stats_page_refresh():
 def stats_page():
     global flight_progress_stats_updated
 
-    total_verified = FilmSegment.query.filter(FilmSegment.is_verified == True).count()
-    total = FilmSegment.query.count()
+    total_verified = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.is_verified == True).count()
+    total = FilmSegment.query_visible_to_user(current_user).count()
 
-    flightprogress_html = make_flight_progress_bar_plot()
+    if current_user.is_authenticated:
+        include_greenland = current_user.view_greenland
+    else:
+        include_greenland = False
+
+    flightprogress_html = make_flight_progress_bar_plot(include_greenland=include_greenland)
 
     elapsed_time = time.time() - flight_progress_stats_updated
     if elapsed_time < 5:

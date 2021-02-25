@@ -128,6 +128,10 @@ Pulling the production database to a local database can be done this way:
 
 `PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull HEROKU_POSTGRESQL_BRONZE <local db> --app spri-explore`
 
+Pushing a local database to production works like this:
+
+`heroku pg:push postgresql://postgres:<postgres password>@localhost:5432/<local db> DATABASE_URL --app spri-explore`
+
 ## Other random notes
 
 pybrake 1.0 release breaks things - no idea why

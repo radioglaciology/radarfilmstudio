@@ -16,10 +16,8 @@ import pandas as pd
 from flask import current_app as app
 
 
-# BlueMarble_ShadedRelief_Bathymetry
-    # MEaSUREs_Ice_Velocity_Antarctica
-
-map_tile_sources = [
+map_tile_sources_all = {}
+map_tile_sources_all['antarctica'] = [
     {
         "name": "Land/Water Mask",
         "url": "https://gibs.earthdata.nasa.gov/wms/epsg3031/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2016-01-08T00:00:00Z&LAYERS=SCAR_Land_Water_Map,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
@@ -33,46 +31,95 @@ map_tile_sources = [
     {
         "name": "MEaSUREs Ice Velocity",
         "url": "https://gibs.earthdata.nasa.gov/wms/epsg3031/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2011-01-08T00:00:00Z&LAYERS=MEaSUREs_Ice_Velocity_Antarctica,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3031&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
-        "attribution": "<a href='https://nsidc.org/data/nsidc-0484/versions/1?_ga=2.175160290.1195904407.1611612195-1769237132.1578334180', target='_blank'>MEaSUREs Ice Velocity</a>.  Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+        "attribution": "<a href='https://nsidc.org/data/nsidc-0484/versions/1', target='_blank'>MEaSUREs Ice Velocity</a>.  Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    }
+]
+map_tile_sources_all['greenland'] = [
+    {
+        "name": "Land/Water Mask",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3413/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2016-01-08T00:00:00Z&LAYERS=OSM_Land_Water_Map,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3413&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "© <a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap</a> contributors. Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    },
+    {
+        "name": "Blue Marble",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3413/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2016-01-08T00:00:00Z&LAYERS=BlueMarble_ShadedRelief_Bathymetry,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3413&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "MODIS <a href='https://earthobservatory.nasa.gov/features/BlueMarble' target='_blank'>Cloud-Free Composite</a>. Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
+    },
+    {
+        "name": "MEaSUREs Ice Velocity",
+        "url": "https://gibs.earthdata.nasa.gov/wms/epsg3413/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0?TIME=2009-01-08T00:00:00Z&LAYERS=MEaSUREs_Ice_Velocity_Greenland,Coastlines&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&HEIGHT=256&WIDTH=256&CRS=EPSG:3413&BBOX={XMIN},{YMIN},{XMAX},{YMAX}",
+        "attribution": "<a href='https://nsidc.org/data/nsidc-0478', target='_blank'>MEaSUREs Ice Velocity</a>.  Tiles served by NASA's <a href='https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs' target='_blank'>GIBS</a>."
     }
 ]
 
 
-def load_flight_lines(positioning_dir):
+def load_flight_lines(positioning_dir, dataset):
     flight_lines = {}
 
     crs_3031 = crs.Stereographic(central_latitude=-90, true_scale_latitude=-71)
+    #crs_3413 = crs.Stereographic(central_latitude=90, true_scale_latitude=70)
+    crs_3413 = crs.epsg(3413)
     crs_lonlat = crs.PlateCarree()
 
     for filename in os.listdir(positioning_dir):
         if filename.endswith(".csv"):
-            id = int(filename.split('.')[0])
+            # Two formats of positioning CSVs unfortunately
+            if filename.endswith("_final_QC.csv"): # Assume Greenland-style data
+                fparts = filename.split('_')
+                id = int(fparts[1][2:]) # flight id
+                fdate = int(fparts[0])%100 # last 2 digits of year only
 
-            df = pd.read_csv(os.path.join(positioning_dir, filename))
-            df = df.rename(columns={'LAT': 'Latitude', 'LON': 'Longitude'}).dropna()
-            df['Track'] = id
+                df = pd.read_csv(os.path.join(positioning_dir, filename), header=None, names=["CBD", "Longitude", "Latitude", "a", "b"])
+                df = df.drop(['a', 'b'], axis='columns').dropna()
+                df['Track'] = id
+                df['Date'] = fdate
+                df['url'] = f"/flight/{dataset}/{id}/{fdate}"
 
-            # Project to CRS 3031 (South Polar Stereographic)
-            projected_coords = crs_3031.transform_points(crs_lonlat, np.array(df['Longitude']), np.array(df['Latitude']))
+            else: # Assume Antarctica style data
+                id = int(filename.split('.')[0])
+                fdate = None
+
+                df = pd.read_csv(os.path.join(positioning_dir, filename)).drop(['THK', 'SRF', 'SURF'], axis='columns', errors='ignore')
+                df = df.rename(columns={'LAT': 'Latitude', 'LON': 'Longitude'}).dropna()
+                df['Track'] = id
+                df['Date'] = None
+                df['url'] = f"/flight/{dataset}/{id}"
+
+            if dataset == 'antarctica':
+                # Project to CRS 3031 (South Polar Stereographic)
+                projected_coords = crs_3031.transform_points(crs_lonlat, np.array(df['Longitude']), np.array(df['Latitude']))
+            elif dataset == 'greenland':
+                # Project to CRS 3413 (Polar Stereographic North)
+                projected_coords = crs_3413.transform_points(crs_lonlat, np.array(df['Longitude']), np.array(df['Latitude']))
+            else:
+                raise(Exception(f"Unexpected dataset {dataset} - should be antarctica or greenland"))
+            
             df['X'] = projected_coords[:, 0]
             df['Y'] = projected_coords[:, 1]
 
-            flight_lines[id] = df
+            flight_lines[(id,fdate)] = df
+            if not ((id, None) in flight_lines):
+                flight_lines[(id,None)] = df # Arbitrarily make the first flight we process the default if no year known
 
     return flight_lines
 
 
-def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None, return_plot=False, return_components=False):
-    if not flight_lines:
-        print("Warning: Recommend pre-loading positioning files to speedup page load.")
-        flight_lines = load_flight_lines('../original_positioning/')
+def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title="", flight_lines = None, flight_date=None, return_plot=False, return_components=False):
+    if flight_lines is None:
+        raise(Exception("Providing flight lines is now required."))
+        # print("Warning: Recommend pre-loading positioning files to speedup page load.")
+        # flight_lines = load_flight_lines('../original_positioning/')
 
     if not flight_id:
         flight_lines = list(flight_lines.values())
     else:
-        print("specific flight")
-        if flight_id in flight_lines:
-            flight_lines = [flight_lines[flight_id]]
+        if flight_date is None:
+            flight_identifier = (flight_id, None)
+        else:
+            flight_identifier = (flight_id, flight_date%100) # only year part
+        
+        if flight_identifier in flight_lines:
+            flight_lines = [flight_lines[flight_identifier]]
         else:
             not_found_html = "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
             if return_components:
@@ -100,8 +147,14 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
     highlight_source = ColumnDataSource(data={'X': [], 'Y': []})
     p.scatter(x='X', y='Y', source=highlight_source, line_width=3, color=app.config["COLOR_ACCENT"])
 
-    p.xaxis.axis_label = "ESPG:3031 X"
-    p.yaxis.axis_label = "ESPG:3031 Y"
+    if dataset == 'antarctica':
+        p.xaxis.axis_label = "ESPG:3031 X"
+        p.yaxis.axis_label = "ESPG:3031 Y"
+    elif dataset == 'greenland':
+        p.xaxis.axis_label = "ESPG:3413 X"
+        p.yaxis.axis_label = "ESPG:3413 Y"
+    else:
+        raise(Exception(f"Unexpected dataset {dataset} - should be antarctica or greenland"))
 
     p.add_tools(HoverTool(
         renderers=flight_glyphs,
@@ -111,6 +164,8 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
         ]
     ))
 
+
+    map_tile_sources = map_tile_sources_all[dataset] # select greenland or antarctica data tiles
     
     tile_options = {}
     tile_options['url'] = map_tile_sources[0]['url']
@@ -143,7 +198,7 @@ def make_bokeh_map(width, height, flight_id=None, title="", flight_lines = None,
     tile_select.js_on_change('value', cb_tile_select)
 
     if len(flight_lines) > 1:
-        url = f"/flight/@Track/"
+        url = f"@url"
         taptool = p.select(type=TapTool)
         taptool.callback = OpenURL(url=url, same_tab=True)
 

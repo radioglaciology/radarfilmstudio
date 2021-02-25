@@ -21,7 +21,7 @@ import os
 
 # Globally accessible plugins
 db = SQLAlchemy()
-migrate = Migrate()
+migrate = Migrate(compare_type=True)
 continuum = Continuum(db=db, migrate=migrate)
 ma = Marshmallow()
 seg_api = Api()

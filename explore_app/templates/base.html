@@ -104,9 +104,18 @@
             <a class="navbar-item" href="/docs/start">
                 Tutorial
             </a>
+            {% if current_user.view_greenland %}
+            <a class="navbar-item" href="/map/antarctica">
+                Antarctica
+            </a>
+            <a class="navbar-item" href="/map/greenland">
+                Greenland
+            </a>
+            {% else %}
             <a class="navbar-item" href="/map">
                 Map
             </a>
+            {% endif %}
             {% if current_user.is_authenticated %}
             <a class="navbar-item" href="/query">
                 Query

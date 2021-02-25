@@ -8,7 +8,7 @@ class User(UserMixin, db.Model):
 
     __tablename__ = 'flasklogin-users'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
     first_name = db.Column(db.String, nullable=False, unique=False)
     last_name = db.Column(db.String, nullable=False, unique=False)
@@ -17,7 +17,8 @@ class User(UserMixin, db.Model):
     created_on = db.Column(db.DateTime, index=False, nullable=False, unique=False)
     last_login = db.Column(db.DateTime, index=False, unique=False, nullable=True)
 
-    write_permission = db.Column(db.Boolean, nullable=False, unique=False, default=False)
+    write_permission = db.Column(db.Boolean, nullable=False, unique=False, default=False) # Permission to change metadata
+    view_greenland = db.Column(db.Boolean, nullable=False, unique=False, default=False) # Permission to view greenland data
 
     def set_password(self, password):
         self.password = generate_password_hash(password, method='sha256')
@@ -28,14 +29,3 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.email}, created on {self.created_on}, write permission: {self.write_permission}>'
 
-    # Manually granting write permissions
-    # > from explore_app import db
-    # > from explore_app import create_app
-    # > app = create_app()
-    # > from explore_app.user import User
-    # > app.app_context().push()
-    # > u = db.session.query(User).get(1)
-    # > u.write_permission = True
-    # > u
-    #   <User teisberg@stanford.edu, created on 2020-04-22 12:14:20.329163, write_permission: True>
-    # > db.session.commit()
