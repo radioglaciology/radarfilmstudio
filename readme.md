@@ -48,12 +48,12 @@ Create a `.env` file in the project base directory (where this file is).
 The form of this file should be:
 
 ```shell script
-SECRET_KEY=somerandomstringofcharactershere
+SECRET_KEY=<somerandomstringofcharactershere>
 FLIGHT_POSITIONING_DIR=./original_positioning/
 FILM_IMAGES_DIR=https://sprifilm.s3-us-west-2.amazonaws.com/
 ENABLE_TIFF=0
 TMP_OUTPUTS_DIR=tmp/
-DATABASE_URL=postgresql+psycopg2://postgres:flaskexploredev@localhost:5432/spri_explore
+DATABASE_URL=postgresql+psycopg2://postgres:<local postgres password>@localhost:5432/spri_explore
 PORT=7879
 ```
 

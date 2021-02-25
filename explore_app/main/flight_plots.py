@@ -6,6 +6,8 @@ from bokeh.transform import linear_cmap
 from bokeh.layouts import column, row
 from bokeh.models import Toggle, Select, CustomJS, Circle, WheelZoomTool
 
+from sqlalchemy import and_, or_
+
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=F
             .filter(FilmSegment.flight == flight_id).statement, session.bind)
     else:
         df = pd.read_sql(FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
-            .filter(FilmSegment.flight == flight_id, FilmSegment.raw_date == flight_date).statement, session.bind)
+            .filter(and_(FilmSegment.flight == flight_id, FilmSegment.raw_date == flight_date)).statement, session.bind)
 
     # Add colormaps to plot
     unique_reels = df['reel'].unique()

@@ -95,18 +95,23 @@ def map_page(dataset='antarctica'):
 def flight_page(flight_id, dataset='antarctica', flight_date=None):
     # If only a year is given for the date, redirect to most common flight date
     if (flight_date is not None) and (flight_date < 100):
+        print(f"Redirecting flight {flight_id} in year {flight_date} from dataset {dataset}")
         q = db.session.query(FilmSegment.flight, FilmSegment.raw_date,
-                            func.array_agg(FilmSegment.id)).filter(FilmSegment.flight == flight_id).group_by(FilmSegment.flight, FilmSegment.raw_date)
+                            func.count(FilmSegment.id)).filter(and_(FilmSegment.flight == flight_id,
+                            FilmSegment.dataset == dataset)).group_by(FilmSegment.flight, FilmSegment.raw_date)
         df = pd.read_sql(q.statement, db.session.bind)
-        df['n'] = [len(x) for x in df['array_agg_1']]
         df['year'] = [(0 if np.isnan(x) else int(x)%100) for x in df['raw_date']]
         df = df[df['year'] == flight_date]
 
         if len(df) == 0:
+            print("No options - directing to general flight page")
             return redirect(f'/flight/{dataset}/{flight_id}/')
         else:
-            idx = df['n'].argmax()
+            print(df)
+            idx = df['count_1'].argmax()
             fdate = int(df.iloc[idx]['raw_date'])
+            print(df.iloc[idx])
+            print(f"Directing to specific date {fdate}")
             if fdate < 100:
                 print(f"WARNING: Failed to find a valid most common raw date for dataset {dataset} and year {flight_date}")
                 fdate = ''

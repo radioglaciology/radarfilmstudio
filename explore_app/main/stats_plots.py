@@ -24,10 +24,14 @@ flight_progress_stats = {'greenland': {}, 'antarctica': {}}
 
 def update_flight_progress_stats(session):
     update_flight_progress_stats_dataset(session, 'antarctica', 'Antarctica ')
-    update_flight_progress_stats_dataset(session, 'greenland', 'Greenland ')
+    update_flight_progress_stats_dataset(session, 'greenland', 'Greenland ', separate_by_date=True)
 
-def update_flight_progress_stats_dataset(session, dataset, flight_name_prefix):
-    distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight, FilmSegment.raw_date).distinct().all()
+def update_flight_progress_stats_dataset(session, dataset, flight_name_prefix, separate_by_date=False):
+    if separate_by_date:
+        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight, FilmSegment.raw_date).distinct().all()
+    else:
+        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight).distinct().all()
+        distinct_flights = [(x[0], None) for x in distinct_flights]
 
     verified_list = []
     unverified_list = []

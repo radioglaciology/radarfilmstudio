@@ -27,7 +27,7 @@ class FilmSegmentSchema(ma.Schema):
     class Meta:
         fields = ("id", "path", "reel", "first_frame", "last_frame", "first_cbd", "last_cbd", "flight",
                   "is_junk", "is_verified", "needs_review", "scope_type", "instrument_type", "notes",
-                  "updated_by", "last_changed")
+                  "updated_by", "last_changed", "raw_date", "dataset")
 
 
 segment_schema = FilmSegmentSchema()
@@ -105,6 +105,12 @@ class FilmSegmentResource(Resource):
             seg.instrument_type = request.json['instrument_type']
         if 'notes' in request.json:
             seg.notes = request.json['notes']
+        
+        if 'raw_date' in request.json:
+            if request.json['raw_date'] == '':
+                seg.raw_date = None
+            else:
+                seg.raw_date = request.json['raw_date']
 
         if 'is_junk' in request.json:
             seg.is_junk = (request.json['is_junk'] == "junk")
