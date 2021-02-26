@@ -79,7 +79,7 @@ def add_next_previous(seg_dict, seg):
 class FilmSegmentResource(Resource):
 
     def get(self, id):
-        seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
+        seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first_or_404(id)
         seg_dict = segment_schema.dump(seg)
         add_next_previous(seg_dict, seg)
         return seg_dict
@@ -88,7 +88,7 @@ class FilmSegmentResource(Resource):
         if not has_write_permission(current_user):
             return None, 401
 
-        seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
+        seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first_or_404(id)
 
         if not request.is_json: # only accept json formatted update requests
             return None, 400
@@ -130,7 +130,7 @@ seg_api.add_resource(FilmSegmentResource, '/api/segments/<int:id>')
 
 @api_bp.route('/api/segments/<int:id>/version/<int:version>')
 def film_segment_version(id, version):
-    seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
+    seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first_or_404(id)
     seg_dict = segment_schema.dump(seg.versions[version])
     add_next_previous(seg_dict, seg)
     return seg_dict
@@ -140,7 +140,7 @@ def film_segment_history(id):
     if not has_write_permission(current_user):
         return None, 401
 
-    seg = FilmSegment.query_visible_to_user(current_user).get_or_404(id)
+    seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first_or_404(id)
 
     history = []
     for version in range(count_versions(seg)):
