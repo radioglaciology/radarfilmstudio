@@ -19,6 +19,7 @@ def worker_load_image(file_path):
 
 def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     print(f'Starting stitch with qid {qid}')
+    t_start = time.time()
 
     if image_type == 'jpg' or image_type == 'JPG':
         image_type = 'JPEG'
@@ -62,7 +63,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     img_io.seek(0)
 
 
-    print(f"Completed stitch at {time.time()}")
+    print(f"Completed stitch in {time.time() - t_start} seconds")
 
     return {
         'filename': filename_out,

@@ -33,14 +33,55 @@ Interaction between the web and worker dynos uses Redis Queue.
 
 ## Testing locally
 
+### Heroku
+
+You'll need to install the Heroku CLI tool: https://devcenter.heroku.com/articles/heroku-cli
+
 ### Database setup
 
-TODO
+You should run a local postgres database for testing.
+
+To install:
+
+```
+sudo apt install postgresql postgresql-contrib
+```
+
+It's also handy to have a tool to explore your local database setup. I like Adminer:
+
+```
+sudo apt install adminer
+sudo a2enconf adminer
+```
+
+You'll need to set a password for the `postgres` user (or create a new account and set a password for that one).
+
+To login to the psql shell: `sudo -u postgres psql`
+To change the password for a user: `ALTER USER postgres PASSWORD 'newpasswordhere';` (The semicolon is important!)
+To quit the shell: `\q`
+
+Then you'll need to edit your `pg_hba.conf` file (which you'll find in `/etc/postgresql/12/main`, possibly with a different verison instead of 12).
+
+Find this line:
+
+```local   all             postgres                                peer```
+
+and change `peer` to `md5`.
+
+Now you can test if you're able to login by going to `localhost/adminer`.
+
+If that worked, you may want to pull the production database down so you can test on a local snapshot of it. See "Database backup and restore" below.
 
 #### Other local postgresql help
 
 Access psql prompt: `sudo -i -u postgres`
 May need to change in `pg_hba.conf`: `peer` to `md5` for user `postgres`
+
+### Redis
+
+You'll also need a local Redis server running. See: https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04
+
+```sudo apt install redis-server```
 
 ### Environment variables
 
@@ -89,11 +130,17 @@ will auto-reload in real time.
 
 From the project base directory, build the docker image with:
 
-`docker build -t spri-explore:latest .`
+```
+docker build -t spri-explore:latest -f Dockerfile.web --tag spri-explore-web .
+docker build -t spri-explore:latest -f Dockerfile.worker --tag spri-explore-worker .
+```
 
 Then run it:
 
-`docker run -it --network="host" --env-file .env spri-explore:latest`
+```
+docker run -it --network="host" --env-file .env spri-explore-web:latest
+docker run -it --network="host" --env-file .env spri-explore-worker:latest
+```
 
 You should now be able to open http://localhost:7879/ and see the app in your
 browser. (Or replace `7879` with whatever port you defined in your `.env` file.)
@@ -128,10 +175,14 @@ Pulling the production database to a local database can be done this way:
 
 `PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull HEROKU_POSTGRESQL_BRONZE <local db> --app spri-explore`
 
-Pushing a local database to production works like this:
+Pushing a local database to production works like this: (DANGER! This will overwrite the production database.)
 
 `heroku pg:push postgresql://postgres:<postgres password>@localhost:5432/<local db> DATABASE_URL --app spri-explore`
 
 ## Other random notes
 
 pybrake 1.0 release breaks things - no idea why
+
+## Feature TODO list
+
+* Add cookie to remember map tile preference

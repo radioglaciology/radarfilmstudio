@@ -1,8 +1,11 @@
 <div class="container"><div class="box">
     {% if stitch_preview %}
         <div id="stitch-preview-div" class="flight-radargram">
-            <div class="horizontal-scroll-wrapper" style="max-width: 100%;">
+            <div id="radargram-stitch-wrapper" class="horizontal-scroll-wrapper" style="max-width: 100%; display: none;">
                 <img id="radargram-stitch-preview" src=""/>
+            </div>
+            <div id="radargram-stitch-message-wrapper" class="columns is-vcentered" style="height:100%;">
+                <div id="radargram-stitch-message" class="column has-text-centered"></div>
             </div>
         </div>
 
@@ -10,6 +13,7 @@
             var current_query_id = '{{ query_id }}';
 
             function load_preview() {
+                $("#stitch-preview-div").fadeIn(500);
                 $.ajax({
                         type: "POST",
                         url: "/query/action",
@@ -38,14 +42,22 @@
                                             if (res === 'done') {
                                                 var result_url = "/outputs/"+job_id;
                                                 $("#radargram-stitch-preview").attr("src", result_url);
-                                                $("#stitch-preview-div").fadeIn(500);
+                                                $('#radargram-stitch-message-wrapper').hide();
+                                                $("#radargram-stitch-wrapper").show();
                                             } else {
+                                                $('#radargram-stitch-message').html('<i class="fas fa-spinner fa-spin"></i>');
+                                                $("#radargram-stitch-wrapper").hide();
+                                                $('#radargram-stitch-message-wrapper').show();
                                                 setTimeout(poll_job, 1000);
                                             }
                                         }
                                     });
                                 }
                                 poll_job();
+                            } else {
+                                $('#radargram-stitch-message').text(res);
+                                $("#radargram-stitch-wrapper").hide();
+                                $('#radargram-stitch-message-wrapper').show();
                             }
                         }
                     });

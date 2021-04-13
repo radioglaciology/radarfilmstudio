@@ -100,7 +100,7 @@ def flight_page(flight_id, dataset='antarctica', flight_date=None):
                             func.count(FilmSegment.id)).filter(and_(FilmSegment.flight == flight_id,
                             FilmSegment.dataset == dataset)).group_by(FilmSegment.flight, FilmSegment.raw_date)
         df = pd.read_sql(q.statement, db.session.bind)
-        df['year'] = [(0 if np.isnan(x) else int(x)%100) for x in df['raw_date']]
+        df['year'] = [(0 if x is None or np.isnan(x) else int(x)%100) for x in df['raw_date']]
         df = df[df['year'] == flight_date]
 
         if len(df) == 0:
@@ -345,7 +345,7 @@ def query_id_results():
     query_cache[qid] = query_log
 
     return render_template("queryresultslist.html", segments=segs, show_view_toggle=True, show_history=True,
-                            n_total_results=len(segs), stitch_preview=(len(segs) < 10),
+                            n_total_results=len(segs), stitch_preview=(len(segs) <= 10),
                            query_id=qid, enable_tiff=app.config['ENABLE_TIFF'], paginate=False)
 
 @main_bp.route('/update_form/<int:id>/')
@@ -386,11 +386,6 @@ def stats_page():
                            total_verified=total_verified, total=total, percent=int(100*total_verified/total),
                            update_string=update_string,
                            breadcrumbs=[('Explorer', '/'), ('Stats', url_for('main_bp.stats_page'))])
-
-
-@main_bp.route('/testerror')
-def testerror():
-    raise Exception("Not a real error. Just a test.")
 
 
 # Periodic background updating
