@@ -336,7 +336,15 @@ def query_results():
 @main_bp.route('/api/queryids', methods=["POST"])
 def query_id_results():
     segment_ids = request.form.getlist('ids[]')
-    segs = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id.in_(segment_ids)).all()
+    query = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id.in_(segment_ids))
+    
+    if request.form.get('sort'):
+        if request.form.get('sort') == 'cbd':
+            query = query.order_by(FilmSegment.first_cbd)
+        elif request.form.get('sort') == 'frame':
+            query = query.order_by(FilmSegment.first_frame)
+
+    segs = query.all()
 
     # Record this query (temporarily)
     query_log = {'full_query': [x.id for x in segs],

@@ -34,7 +34,7 @@
         $.ajax({
             type: "POST",
             url: "/api/queryids",
-            data: {'ids': ids},
+            data: {'ids': ids, 'sort': 'cbd'},
             success: function(res) {
                 $("#segments-selected-count").html(ids.length);
                 $("#film-segments-list").html(res);
