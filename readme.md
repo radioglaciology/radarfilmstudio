@@ -33,9 +33,11 @@ Interaction between the web and worker dynos uses Redis Queue.
 
 ## Testing locally
 
-### Heroku
+### Heroku and Docker
 
 You'll need to install the Heroku CLI tool: https://devcenter.heroku.com/articles/heroku-cli
+
+You'll also need to install Docker: https://docs.docker.com/engine/install/
 
 ### Database setup
 
@@ -90,13 +92,20 @@ The form of this file should be:
 
 ```shell script
 SECRET_KEY=<somerandomstringofcharactershere>
-FLIGHT_POSITIONING_DIR=./original_positioning/
+ANTARCTICA_FLIGHT_POSITIONING_DIR=./antarctica_original_positioning/
+GREENLAND_FLIGHT_POSITIONING_DIR=./greenland_positioning/
+ANTARCTICA_FILM_IMAGES_DIR=https://sprifilm.s3-us-west-2.amazonaws.com/
+GREENLAND_FILM_IMAGES_DIR=https://dtufilm.s3-us-west-2.amazonaws.com/
 FILM_IMAGES_DIR=https://sprifilm.s3-us-west-2.amazonaws.com/
 ENABLE_TIFF=0
 TMP_OUTPUTS_DIR=tmp/
 DATABASE_URL=postgresql+psycopg2://postgres:<local postgres password>@localhost:5432/spri_explore
+PYBRAKE_PROJECT_ID=
+PYBRAKE_KEY=
 PORT=7879
 ```
+
+You will need to replace `<somerandomstringofcharactershere>` with some string of random characters. (For local testing, it really doesn't matter what you put here.) You will also need to replace `<local postgres password>` with the password you setup in the "Database setup" section. You may also need to change the username, database name, and or port here.
 
 ### Setting up a `conda` environment
 
