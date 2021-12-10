@@ -129,7 +129,7 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
             else:
                 return not_found_html
 
-    p = figure(match_aspect=True, tools=['pan,wheel_zoom,box_zoom,reset,tap'])
+    p = figure(match_aspect=True, tools=['pan,wheel_zoom,box_zoom,reset,tap,save'], active_scroll='wheel_zoom')
 
     data_sources = []
     flight_glyphs = []
