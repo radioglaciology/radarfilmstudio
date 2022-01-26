@@ -92,7 +92,7 @@ def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=F
     ''')
     view = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
 
-    p = figure(tools=['pan,box_zoom,wheel_zoom,box_select,lasso_select,reset,tap'], active_scroll='wheel_zoom')
+    p = figure(tools=['pan,box_zoom,wheel_zoom,box_select,lasso_select,reset,tap,save'], active_scroll='wheel_zoom')
 
 
 
