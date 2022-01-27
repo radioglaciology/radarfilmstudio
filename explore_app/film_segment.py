@@ -63,12 +63,18 @@ class FilmSegment(db.Model, VersioningMixin):
         else:
             return q.filter(FilmSegment.dataset == 'antarctica')
 
-    def get_path(self, format='tiff'):
+    def get_path(self, format='jpg'):
         p = ''
         if self.dataset == 'greenland':
+            # TODO Handle Greenland TIFF case
             p = f"{app.config['GREENLAND_FILM_IMAGES_DIR']}{self.path}"
         else:
-            p = f"{app.config['ANTARCTICA_FILM_IMAGES_DIR']}{self.path}"
+            if format == 'jpg':
+                p = f"{app.config['ANTARCTICA_FILM_IMAGES_DIR']}{self.path}"
+            elif format == 'tiff':
+                p = f"{app.config['ANTARCTICA_FILM_IMAGES_TIFF_DIR']}{self.path}"
+            else:
+                return None
 
         if format == 'jpg':    
             pre, ext = os.path.splitext(p)

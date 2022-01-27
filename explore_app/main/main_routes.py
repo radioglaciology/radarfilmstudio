@@ -191,7 +191,7 @@ def query_bulk_action():
             return "Sorry, merging more than 10 images into TIFF format is not yet supported due to the absurd size of the original TIFF images."
 
         query = query.order_by(FilmSegment.first_cbd)
-        img_paths = [f.get_path() for f in query.all()]
+        img_paths = [f.get_path(format=image_type) for f in query.all()]
 
         job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid))
         return f"started:{job.get_id()}"

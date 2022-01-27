@@ -28,8 +28,6 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     sum_x = 0
     for img_path in img_paths:
         if image_type == 'JPEG':
-            pre, ext = os.path.splitext(img_path)
-            img_path = pre + "_lowqual.jpg"
             filename_out = f"stitch-{qid}.png"
         else:  # otherwise assume TIFF
             filename_out = f"stitch-{qid}.tiff"

@@ -49,7 +49,7 @@
             </div>
             <div class="level-item">
                 <a alt="Download JPG preview of radargram" id="download-jpeg-link-{{ pageref }}" download class="disabled"><i class="fas fa-download"></i> &nbsp; JPEG</a>&nbsp;&nbsp;
-                {% if enable_tiff == 1 %}
+                {% if enable_tiff %}
                     <a alt="Download full radargram (TIFF)" id="download-tiff-link-{{ pageref }}" download class="disabled"><i class="fas fa-download"></i> &nbsp; TIFF</a>
                 {% endif %}
             </div>
@@ -372,7 +372,7 @@
 
             // Update download links
             $("#download-jpeg-link-{{ pageref }}").prop('href', "/api/radargram/jpg/"+id+".jpg").removeClass("disabled");
-            {% if enable_tiff == 1 %}
+            {% if enable_tiff %}
                 $("#download-tiff-link-{{ pageref }}").prop('href', "/api/radargram/tiff/"+id+".tiff").removeClass("disabled");
             {% endif %}
 
