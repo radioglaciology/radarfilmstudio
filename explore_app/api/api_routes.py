@@ -199,4 +199,4 @@ def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None)
 @api_bp.route('/api/radargram/tiff/<int:id>.tiff')
 def radargram_tiff(id):
     seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first()
-    return serve_unmodified_image(seg.get_path())
+    return serve_unmodified_image(seg.get_path(format='tiff'))

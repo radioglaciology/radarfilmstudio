@@ -95,6 +95,7 @@ SECRET_KEY=<somerandomstringofcharactershere>
 ANTARCTICA_FLIGHT_POSITIONING_DIR=./antarctica_original_positioning/
 GREENLAND_FLIGHT_POSITIONING_DIR=./greenland_positioning/
 ANTARCTICA_FILM_IMAGES_DIR=https://sprifilm.s3-us-west-2.amazonaws.com/
+ANTARCTICA_FILM_IMAGES_TIFF_DIR=https://storage.googleapis.com/spri_film_stitched/
 GREENLAND_FILM_IMAGES_DIR=https://dtufilm.s3-us-west-2.amazonaws.com/
 FILM_IMAGES_DIR=https://sprifilm.s3-us-west-2.amazonaws.com/
 ENABLE_TIFF=0
@@ -108,6 +109,10 @@ PORT=7879
 You will need to replace `<somerandomstringofcharactershere>` with some string of random characters. (For local testing, it really doesn't matter what you put here.) You will also need to replace `<local postgres password>` with the password you setup in the "Database setup" section. You may also need to change the username, database name, and or port here.
 
 ### Setting up a `conda` environment
+
+It's recommended to set your default conda channel to `conda-forge` (but probably not strictly required).
+
+One of the pip-only packages (pybrake) also requires gcc. If you're on Ubuntu, you can do `sudo apt install build-essential`.
 
 `conda env create -f environment.yml --name spri_explore`
 
