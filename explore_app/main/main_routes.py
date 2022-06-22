@@ -13,7 +13,8 @@ from .stats_plots import make_flight_progress_bar_plot
 from explore_app.film_segment import FilmSegment
 from .stats_plots import update_flight_progress_stats
 
-from ..api.api_routes import has_write_permission, load_image
+from ..api.api_routes import has_write_permission, load_image, query_results_from_database
+from ..api.api_routes import query_cache, images_cache
 from ..api.image_processing import stitch_images
 
 from sqlalchemy import and_, or_
@@ -47,9 +48,6 @@ for dataset in flight_lines:
     all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select']}
 
 flight_progress_stats_updated = None
-
-query_cache = {}
-images_cache = {}
 
 def make_contributors_df():
     contributors_df = pd.read_csv('contributors.csv', sep=' - ', comment='#')
@@ -223,79 +221,14 @@ def get_output_image(job_id):
     else:
         return "Job not complete", 202
 
+
 @main_bp.route('/query')
 def query_results():
-    query = FilmSegment.query_visible_to_user(current_user)
+    query, query_page, current_page, qid, n = query_results_from_database(request)
 
-    # Filters
-
-    if request.args.get('flight'):
-        query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
-
-    if request.args.get('reel'):
-        query = query.filter(FilmSegment.reel == request.args.get('reel'))
-
-    if request.args.get('verified'):
-        if int(request.args.get('verified')) == 0:
-            query = query.filter(FilmSegment.is_verified == False)
-        elif int(request.args.get('verified')) == 1:
-            query = query.filter(FilmSegment.is_verified == True)
-
-    if request.args.get('scope'):
-        query = query.filter(FilmSegment.scope_type == request.args.get('scope'))
-
-    if request.args.get('dataset'):
-        query = query.filter(FilmSegment.dataset == request.args.get('dataset'))
-
-    if request.args.get('mincbd'):
-        query = query.filter(FilmSegment.first_cbd >= int(request.args.get('mincbd')))
-
-    if request.args.get('maxcbd'):
-        query = query.filter(FilmSegment.first_cbd <= int(request.args.get('maxcbd')))
-
-    if request.args.get('minframe'):
-        query = query.filter(FilmSegment.first_frame >= int(request.args.get('minframe')))
-
-    if request.args.get('maxframe'):
-        query = query.filter(FilmSegment.first_frame <= int(request.args.get('maxframe')))
-
-    # Sorting
-
-    if request.args.get('sort'):
-        if request.args.get('sort') == 'cbd':
-            query = query.order_by(FilmSegment.first_cbd)
-        elif request.args.get('sort') == 'frame':
-            query = query.order_by(FilmSegment.first_frame)
-
-    # Number and page of results
-
-    if request.args.get('n'):
-        n = int(request.args.get('n'))
-    else:
-        n = 10
-
-    if request.args.get('skip'):
-        query.offset(int(request.args.get('skip')))
-
+    # Pagination counts
     n_total_results = query.count()
     n_pages = math.ceil(n_total_results / n)
-
-    if request.args.get('page'):
-        current_page = int(request.args.get('page'))
-        query = query.offset((current_page-1) * n)
-    else:
-        current_page = 1
-
-    query_page = query.limit(n)  # Just this page
-
-    # Record this query (temporarily)
-
-    query_log = {'full_query': [x.id for x in query.all()],
-                 'page_query': [x.id for x in query_page.all()],
-                 'timestamp': time.time()}
-
-    qid = str(uuid.uuid4())
-    query_cache[qid] = query_log
 
     # Display options
 

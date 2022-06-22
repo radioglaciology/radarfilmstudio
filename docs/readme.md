@@ -46,8 +46,11 @@ You should run a local postgres database for testing.
 To install:
 
 ```
-sudo apt install postgresql postgresql-contrib
+sudo apt install postgresql-12 postgresql-contrib-12
 ```
+
+On newer versions of Ubuntu, PostgreSQL 12 may not still be available. As of writing, however, it's still supported and you can get it from the [official PostgreSQL repositories](https://www.postgresql.org/download/linux/ubuntu/). To check what versions you have running, you can use this command: `pg_lsclusters`
+
 
 It's also handy to have a tool to explore your local database setup. I like Adminer:
 
@@ -62,7 +65,7 @@ To login to the psql shell: `sudo -u postgres psql`
 To change the password for a user: `ALTER USER postgres PASSWORD 'newpasswordhere';` (The semicolon is important!)
 To quit the shell: `\q`
 
-Then you'll need to edit your `pg_hba.conf` file (which you'll find in `/etc/postgresql/12/main`, possibly with a different verison instead of 12).
+Then you'll need to edit your `pg_hba.conf` file (which you'll find in `/etc/postgresql/12/main`, possibly with a different verison instead of 12, though note that the current production server runs PostgreSQL 12 and so, for compatibility with pulling backups, it's recommended you stick with 12 for now).
 
 Find this line:
 
@@ -72,7 +75,7 @@ and change `peer` to `md5`.
 
 Now you can test if you're able to login by going to `localhost/adminer`.
 
-If that worked, you may want to pull the production database down so you can test on a local snapshot of it. See "Database backup and restore" below.
+If that worked, you may want to pull the production database down so you can test on a local snapshot of it. See the "Pulling the production database to your local dev environment" section of the [production database docs](production_database_backup_restore.md) page.
 
 #### Other local postgresql help
 
@@ -174,24 +177,13 @@ This will upload and build the docker containers. Once complete, you can release
 
 `heroku container:release web worker --app=spri-explore`
 
-## Database backup and restore
+## Heroku postgresql database
 
-To capture a backup on Heroku and then download it:
+The production database is hosted by Heroku. To backup or restore from it, see the [production database docs](production_database_backup_restore.md) page.
 
-`heroku pg:backups:capture --app spri-explore`
-`heroku pg:backups:download b004 --app spri-explore`
+## User administration
 
-(Repalce `b004` with whatever the id of the backup is.)
-
-This creates a local file `latest.dump` with a backup of the production database.
-
-Pulling the production database to a local database can be done this way:
-
-`PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull HEROKU_POSTGRESQL_BRONZE <local db> --app spri-explore`
-
-Pushing a local database to production works like this: (DANGER! This will overwrite the production database.)
-
-`heroku pg:push postgresql://postgres:<postgres password>@localhost:5432/<local db> DATABASE_URL --app spri-explore`
+For instructions on adding/changing user permissions, see [here](adding_user_permissions.md).
 
 ## Other random notes
 

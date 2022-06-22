@@ -21,6 +21,9 @@ api_bp = Blueprint('api_bp', __name__,
                    static_folder='static')
 seg_api = Api(api_bp)
 
+query_cache = {}
+images_cache = {}
+
 # Database GET/POST
 
 class FilmSegmentSchema(ma.Schema):
@@ -31,6 +34,7 @@ class FilmSegmentSchema(ma.Schema):
 
 
 segment_schema = FilmSegmentSchema()
+segments_schema = FilmSegmentSchema(many=True)
 
 def has_write_permission(current_user):
     if not current_user.is_authenticated:
@@ -200,3 +204,91 @@ def radargram_jpg(id, max_height = None, crop_w_start = None, crop_w_end = None)
 def radargram_tiff(id):
     seg = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.id == id).first()
     return serve_unmodified_image(seg.get_path(format='tiff'))
+
+
+def query_results_from_database(request):
+    query = FilmSegment.query_visible_to_user(current_user)
+
+    # Filters
+
+    if request.args.get('flight'):
+        query = query.filter(FilmSegment.flight == int(request.args.get('flight')))
+
+    if request.args.get('reel'):
+        query = query.filter(FilmSegment.reel == request.args.get('reel'))
+
+    if request.args.get('verified'):
+        if int(request.args.get('verified')) == 0:
+            query = query.filter(FilmSegment.is_verified == False)
+        elif int(request.args.get('verified')) == 1:
+            query = query.filter(FilmSegment.is_verified == True)
+
+    if request.args.get('scope'):
+        query = query.filter(FilmSegment.scope_type == request.args.get('scope'))
+
+    if request.args.get('dataset'):
+        query = query.filter(FilmSegment.dataset == request.args.get('dataset'))
+
+    if request.args.get('mincbd'):
+        query = query.filter(FilmSegment.first_cbd >= int(request.args.get('mincbd')))
+
+    if request.args.get('maxcbd'):
+        query = query.filter(FilmSegment.first_cbd <= int(request.args.get('maxcbd')))
+
+    if request.args.get('minframe'):
+        query = query.filter(FilmSegment.first_frame >= int(request.args.get('minframe')))
+
+    if request.args.get('maxframe'):
+        query = query.filter(FilmSegment.first_frame <= int(request.args.get('maxframe')))
+
+    # Sorting
+
+    if request.args.get('sort'):
+        if request.args.get('sort') == 'cbd':
+            query = query.order_by(FilmSegment.first_cbd)
+        elif request.args.get('sort') == 'frame':
+            query = query.order_by(FilmSegment.first_frame)
+
+    # Number and page of results
+
+    if request.args.get('n'):
+        n = int(request.args.get('n'))
+    else:
+        n = 10
+
+    if request.args.get('skip'):
+        query.offset(int(request.args.get('skip')))
+
+    if request.args.get('page'):
+        current_page = int(request.args.get('page'))
+        query = query.offset((current_page-1) * n)
+    else:
+        current_page = 1
+
+    query_page = query.limit(n)  # Just this page
+
+    # Record this query (temporarily)
+
+    query_log = {'full_query': [x.id for x in query.all()],
+                 'page_query': [x.id for x in query_page.all()],
+                 'timestamp': time.time()}
+
+    qid = str(uuid.uuid4())
+    query_cache[qid] = query_log
+
+    return query, query_page, current_page, qid, n
+
+""" The API version of the query path, which returns a JSON-formatted list of segment IDs or the actual segment metadata """
+@api_bp.route('/api/query')
+def query_json_results():
+    query, _, _, qid, n = query_results_from_database(request)
+    if request.args.get('ids_only'):
+        segment_ids = [seg.id for seg in query.all()]
+        return {'ids': segment_ids}
+    else:
+        #segments = [segment_schema.dump(seg) for seg in query.all()]
+        return {'segments': segments_schema.dump(query.all())}
+
+@api_bp.route('/api/test')
+def api_test_page():
+    return "1"
