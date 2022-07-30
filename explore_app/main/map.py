@@ -57,8 +57,8 @@ def load_flight_lines(positioning_dir, dataset):
     flight_lines = {}
 
     crs_3031 = crs.Stereographic(central_latitude=-90, true_scale_latitude=-71)
-    #crs_3413 = crs.Stereographic(central_latitude=90, true_scale_latitude=70)
-    crs_3413 = crs.epsg(3413)
+    crs_3413 = crs.Stereographic(central_latitude=90, central_longitude=-45, true_scale_latitude=70)
+    #crs_3413 = crs.epsg(3413)
     crs_lonlat = crs.PlateCarree()
 
     for filename in os.listdir(positioning_dir):
