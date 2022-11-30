@@ -338,7 +338,11 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    diff = time.time() - g.start
+    if hasattr(g, 'start'):
+        diff = time.time() - g.start
+    else:
+        diff = 0
+    
     if ((response.response) and
         (200 <= response.status_code < 300) and
         (response.content_type.startswith('text/html'))):
