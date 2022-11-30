@@ -45,7 +45,7 @@ flight_lines = {
 all_flights_maps = {}
 for dataset in flight_lines:
     all_flights_maps[dataset] = make_bokeh_map(800, 800, flight_lines=flight_lines[dataset], return_components=True, dataset=dataset)
-    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select']}
+    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select', 'date_select']}
 
 flight_progress_stats_updated = None
 
@@ -84,8 +84,10 @@ def docs_contact_page():
 @main_bp.route('/map/<dataset>/')
 def map_page(dataset='antarctica'):
     script, divs = components(all_flights_maps[dataset])
+    
     return render_template("map.html",
-                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'])
+                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'],
+                            date_select=divs["date_select"], show_date_select=(dataset=='greenland'))
 
 @main_bp.route('/flight/<int:flight_id>/')
 @main_bp.route('/flight/<dataset>/<int:flight_id>/')

@@ -15,6 +15,9 @@
             <div class="level-item has-text-centered">
                 {{ tile_select|safe }}
             </div>
+            <div class="level-item has-text-centered" {% if not show_date_select %} style="display: none;"{% endif %}>
+                {{ date_select|safe }}
+            </div>
         </nav>
     </div>
 </section>
