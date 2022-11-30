@@ -64,10 +64,23 @@ class FilmSegment(db.Model, VersioningMixin):
             return q.filter(FilmSegment.dataset == 'antarctica')
 
     def get_path(self, format='jpg'):
+        """
+        Mapping from "path" column of database to a URL where we can actually locate the data.
+        """
         p = ''
         if self.dataset == 'greenland':
             # TODO Handle Greenland TIFF case
-            p = f"{app.config['GREENLAND_FILM_IMAGES_DIR']}{self.path}"
+            if format == 'jpg':
+                p = f"{app.config['GREENLAND_FILM_IMAGES_DIR']}{self.path}"
+            elif format == 'tiff':
+                # Due to the scanning occurring in two parts, the dataset is broken into two
+                # chunks.
+                if self.path.startswith("DTU"):
+                    p = f"{app.config['GREENLAND_FILM_IMAGES_TIFF_DIR_2']}{self.path}"
+                else:
+                    p = f"{app.config['GREENLAND_FILM_IMAGES_TIFF_DIR_1']}{self.path}"
+            else:
+                return None
         else:
             if format == 'jpg':
                 p = f"{app.config['ANTARCTICA_FILM_IMAGES_DIR']}{self.path}"
