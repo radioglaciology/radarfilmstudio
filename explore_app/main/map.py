@@ -117,22 +117,28 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
         # print("Warning: Recommend pre-loading positioning files to speedup page load.")
         # flight_lines = load_flight_lines('../original_positioning/')
 
+    no_flights_found = False
     if flight_id: # Select a specific flight
-        if flight_date is None:
-            flight_identifier = (flight_id, None)
-        else:
+        if flight_date is not None:
             flight_identifier = (flight_id, flight_date%100) # only year part
-        
-        if flight_identifier in flight_lines:
-            flight_lines = {flight_identifier: flight_lines[flight_identifier]}
-        else:
-            not_found_html = "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
-            if return_components:
-                return None
-            elif return_plot:
-                return not_found_html, None
+            if flight_identifier in flight_lines:
+                flight_lines = {flight_identifier: flight_lines[flight_identifier]}
             else:
-                return not_found_html
+                no_flights_found = True
+        else:
+            flight_lines = {flt_ident: flt_line for (flt_ident, flt_line) in flight_lines.items() if flt_ident[0] == flight_id}
+            if len(flight_lines) == 0:
+                no_flights_found = True
+            
+    # Handle case where no flights match the query
+    if no_flights_found:
+        not_found_html = "<div class='plot_error'>Couldn't find the requested flight ID.</div>"
+        if return_components:
+            return None
+        elif return_plot:
+            return not_found_html, None
+        else:
+            return not_found_html
 
     p = figure(match_aspect=True, tools=['pan,wheel_zoom,box_zoom,reset,tap,save'], active_scroll='wheel_zoom')
 

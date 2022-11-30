@@ -98,6 +98,17 @@ def flight_page(flight_id, dataset='antarctica', flight_date=None):
                                                                     flight_lines=flight_lines[dataset], dataset=dataset,
                                                                     flight_date=flight_date)
 
+    # Check what years we have the correspond to this flight ID
+    fl = flight_lines[dataset]
+    year_urls = [url_for('main_bp.flight_page', flight_id=flight_id, dataset=dataset, flight_date=None)]
+    year_titles = ["(All years)"]
+    for fl_ident in fl.keys():
+        if fl_ident[0] == flight_id:
+            year_lasttwo = fl_ident[1]
+            if year_lasttwo is not None:
+                year_urls.append(url_for('main_bp.flight_page', flight_id=flight_id, dataset=dataset, flight_date=year_lasttwo))
+                year_titles.append(f"19{year_lasttwo}")
+
     # Check for a direct link to a specific segment to be loaded
     if 'id' in request.args:
         segment_id = int(request.args['id'])
@@ -106,7 +117,8 @@ def flight_page(flight_id, dataset='antarctica', flight_date=None):
 
     return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html,
                             segment_id=segment_id, map_controls=map_controls_html,
-                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'])
+                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
+                           links_to_years=list(zip(year_urls, year_titles)))
 
 @main_bp.route('/query/action', methods=["POST"])
 def query_bulk_action():
