@@ -45,7 +45,7 @@ flight_lines = {
 all_flights_maps = {}
 for dataset in flight_lines:
     all_flights_maps[dataset] = make_bokeh_map(800, 800, flight_lines=flight_lines[dataset], return_components=True, dataset=dataset)
-    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select', 'date_select']}
+    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'color_bar', 'tile_select', 'date_select']}
 
 flight_progress_stats_updated = None
 
@@ -86,37 +86,14 @@ def map_page(dataset='antarctica'):
     script, divs = components(all_flights_maps[dataset])
     
     return render_template("map.html",
-                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'],
+                            bokeh_script=script, map=divs['map'], color_bar=divs['color_bar'],
+                            tile_select=divs['tile_select'],
                             date_select=divs["date_select"], show_date_select=(dataset=='greenland'))
 
 @main_bp.route('/flight/<int:flight_id>/')
 @main_bp.route('/flight/<dataset>/<int:flight_id>/')
 @main_bp.route('/flight/<dataset>/<int:flight_id>/<int:flight_date>')
 def flight_page(flight_id, dataset='antarctica', flight_date=None):
-    # If only a year is given for the date, redirect to most common flight date
-    if (flight_date is not None) and (flight_date < 100):
-        print(f"Redirecting flight {flight_id} in year {flight_date} from dataset {dataset}")
-        q = db.session.query(FilmSegment.flight, FilmSegment.raw_date,
-                            func.count(FilmSegment.id)).filter(and_(FilmSegment.flight == flight_id,
-                            FilmSegment.dataset == dataset)).group_by(FilmSegment.flight, FilmSegment.raw_date)
-        df = pd.read_sql(q.statement, db.session.bind)
-        df['year'] = [(0 if x is None or np.isnan(x) else int(x)%100) for x in df['raw_date']]
-        df = df[df['year'] == flight_date]
-
-        if len(df) == 0:
-            print("No options - directing to general flight page")
-            return redirect(f'/flight/{dataset}/{flight_id}/')
-        else:
-            print(df)
-            idx = df['count_1'].argmax()
-            fdate = int(df.iloc[idx]['raw_date'])
-            print(df.iloc[idx])
-            print(f"Directing to specific date {fdate}")
-            if fdate < 100:
-                print(f"WARNING: Failed to find a valid most common raw date for dataset {dataset} and year {flight_date}")
-                fdate = ''
-            return redirect(f'/flight/{dataset}/{flight_id}/{fdate}')
-
     map_html, cbd_html, cbd_controls_html, map_controls_html = make_linked_flight_plots(db.session, current_user, flight_id,
                                                                     flight_lines=flight_lines[dataset], dataset=dataset,
                                                                     flight_date=flight_date)

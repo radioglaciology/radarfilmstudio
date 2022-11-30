@@ -4,7 +4,7 @@ import numpy as np
 
 from bokeh.plotting import figure
 from bokeh.models.sources import ColumnDataSource
-from bokeh.models import OpenURL, TapTool, HoverTool, BBoxTileSource, Select
+from bokeh.models import OpenURL, TapTool, HoverTool, BBoxTileSource, Select, LinearColorMapper, CustomJSHover, ColorBar
 from bokeh.embed import components
 from bokeh.models.callbacks import CustomJS
 from bokeh.layouts import column, row
@@ -69,18 +69,25 @@ def load_flight_lines(positioning_dir, dataset):
                 id = int(fparts[1][2:]) # flight id
                 fdate = int(fparts[0])%100 # last 2 digits of year only
 
-                df = pd.read_csv(os.path.join(positioning_dir, filename), header=None, names=["CBD", "Longitude", "Latitude", "Surf", "Bed"])
+                df = pd.read_csv(os.path.join(positioning_dir, filename),
+                                 header=None,
+                                 names=["CBD", "Longitude", "Latitude", "Surf", "Bed"])
+                df = df.apply(pd.to_numeric, errors='coerce')
                 df = df.dropna(subset=["CBD", "Longitude", "Latitude"])
                 df['Track'] = id
                 df['Date'] = fdate
                 df['url'] = f"/flight/{dataset}/{id}/{fdate}"
+                df['Thickness'] = df['Surf'] - df['Bed']
 
             else: # Assume Antarctica style data
                 id = int(filename.split('.')[0])
                 fdate = None
 
-                df = pd.read_csv(os.path.join(positioning_dir, filename)).drop(['THK', 'SRF', 'SURF'], axis='columns', errors='ignore')
-                df = df.rename(columns={'LAT': 'Latitude', 'LON': 'Longitude'}).dropna(subset=["CBD", "Longitude", "Latitude"])
+                df = pd.read_csv(
+                        os.path.join(positioning_dir, filename),
+                        na_values=["9999"]
+                    )
+                df = df.rename(columns={'LAT': 'Latitude', 'LON': 'Longitude', 'THK': 'Thickness'}, errors='ignore').dropna(subset=["CBD", "Longitude", "Latitude"])
                 df['Track'] = id
                 df['Date'] = None
                 df['url'] = f"/flight/{dataset}/{id}"
@@ -132,14 +139,22 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
     data_sources = []
     flight_glyphs = {}
 
-    # for df in flight_lines:
-    #     data_source = ColumnDataSource(data=df)
-    #     l_b = p.line(x='X', y='Y', source=data_source, color='white', line_width=2)
+    thickness_color_mapper = LinearColorMapper(palette='Magma256', low=0, high=4000)
+    color_bar = ColorBar(color_mapper=thickness_color_mapper)
+
+    color_bar_plot = figure(title="Ice Thickness [m]", title_location="right",
+                        sizing_mode='stretch_both',
+                        toolbar_location=None, min_border=0, 
+                        outline_line_color=None)
+
+    color_bar_plot.add_layout(color_bar, 'right')
+    color_bar_plot.title.align="center"
 
     for flight_identifier, df in flight_lines.items():
         data_source = ColumnDataSource(data=df)
         data_sources.append(data_source)
-        l = p.line(x='X', y='Y', source=data_source, color=app.config["COLOR_PRIMARY"], line_width=1)
+        #l = p.line(x='X', y='Y', source=data_source, color=app.config["COLOR_PRIMARY"], line_width=1)
+        l = p.scatter(x='X', y='Y', source=data_source, color={'field': 'Thickness', 'transform': thickness_color_mapper}, size=2)
         flight_glyphs[flight_identifier] = l
 
     highlight_source = ColumnDataSource(data={'X': [], 'Y': []})
@@ -158,7 +173,8 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
         renderers=list(flight_glyphs.values()),
         tooltips=[
             ('Track', '@{Track}'),
-            ('CBD', '@CBD')
+            ('CBD', '@CBD'),
+            ('Thickness', '@{Thickness}')
         ]
     ))
 
@@ -205,7 +221,6 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
             if year_string not in glyphs_dict:
                 glyphs_dict[year_string] = []
             glyphs_dict[year_string].append(glyph)
-    print(glyphs_dict)
 
     years = list(set([yr for (_, yr) in flight_lines.keys()]))
 
@@ -237,6 +252,7 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
     if return_components:
         return {
             'map': p,
+            'color_bar': color_bar_plot,
             'tile_select': tile_select,
             'flight_lines': flight_lines,
             'data_sources': data_sources,
