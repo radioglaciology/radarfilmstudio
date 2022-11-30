@@ -15,20 +15,15 @@ auth_bp = Blueprint('auth_bp', __name__, template_folder='templates', static_fol
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        app.logger.debug('User already logged in. Redirecting to map.')
         return redirect(url_for('main_bp.map_page'))
 
     login_form = LoginForm()
     if request.method == 'POST':
-        app.logger.debug(f"Got login request. Validating form...")
         if login_form.validate_on_submit():
-            app.logger.debug(f"Form validated.")
             email = login_form.email.data
             password = login_form.password.data
             user = User.query.filter_by(email=email).first()  # Validate Login Attempt
-            app.logger.debug(f"User attempting to login with email {email}. Found matching user {user}")
             if user and user.check_password(password=password):
-                app.logger.debug(f"Password matched. Logging in...")
                 login_user(user)
                 user.last_login = datetime.now()
                 db.session.commit()
@@ -52,10 +47,9 @@ def login():
 def signup():
     signup_form = SignupForm()
     if request.method == 'POST':
-        app.logger.debug('Signup request submitted.')
         if signup_form.validate_on_submit():
             # Check for invite code
-            if signup_form.invite_code.data != 'stanfordradioglaciology2020':
+            if signup_form.invite_code.data != app.config['INVITE_CODE']:
                 flash('Sorry, the invite code was not recognized.')
                 return redirect(url_for('auth_bp.signup'))
 
@@ -92,7 +86,6 @@ def load_user(user_id):
     app.logger.debug(f"Loading user by id: {user_id}")
     if user_id is not None:
         x = User.query.get(user_id)
-        app.logger.debug(f"Loaded user: {x}")
         return x
     return None
 
