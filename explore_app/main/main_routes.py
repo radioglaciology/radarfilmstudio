@@ -16,6 +16,7 @@ from .stats_plots import update_flight_progress_stats
 from ..api.api_routes import has_write_permission, load_image, query_results_from_database
 from ..api.api_routes import query_cache, images_cache
 from ..api.image_processing import stitch_images
+from ..api.metadata_helper import worker_dummy_serve_metadata_dict
 
 from sqlalchemy import and_, or_
 from sqlalchemy.sql import func
@@ -184,7 +185,13 @@ def query_bulk_action():
 
         job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid))
         return f"started:{job.get_id()}"
-
+    elif action_type == 'download_metadata':
+        query = query.order_by(FilmSegment.first_cbd)
+        metadata_dict = {}
+        for idx, seg in enumerate(query.all()):
+            metadata_dict[idx] = seg.to_dict()
+        job = queue.enqueue(worker_dummy_serve_metadata_dict, failure_ttl=60, args=(metadata_dict, qid))
+        return f"started:{job.get_id()}"
     else:
         return "Unknown action type"
 
@@ -205,10 +212,15 @@ def get_output_image(job_id):
     job = Job.fetch(job_id, connection=conn)
 
     if job.is_finished:
-        img_io = job.result['image']
+        if job.result['job_type'] == 'stitch_images':
+            img_io = job.result['image']
 
-        return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
-                         as_attachment=True, attachment_filename=job.result['filename'])
+            return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
+                            as_attachment=True, attachment_filename=job.result['filename'])
+        elif job.result['job_type'] == 'metadata_to_dict':
+            return job.result['metadata']
+        else:
+            return f"Unknown job type {job.result['job_type']}", 202
     else:
         return "Job not complete", 202
 

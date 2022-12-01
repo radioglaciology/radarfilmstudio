@@ -69,7 +69,6 @@ class FilmSegment(db.Model, VersioningMixin):
         """
         p = ''
         if self.dataset == 'greenland':
-            # TODO Handle Greenland TIFF case
             if format == 'jpg':
                 p = f"{app.config['GREENLAND_FILM_IMAGES_DIR']}{self.path}"
             elif format == 'tiff':
@@ -94,6 +93,12 @@ class FilmSegment(db.Model, VersioningMixin):
             return pre + "_lowqual.jpg"
         else:
             return p
+
+    def to_dict(self):
+        res = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        res['url_jpg'] = self.get_path(format='jpg')
+        res['url_tiff'] = self.get_path(format='tiff')
+        return res
 
     def __repr__(self):
         return f'<FilmSegment {self.id} [{self.dataset}]: Reel {self.reel} frames {self.first_frame} to {self.last_frame} [{self.path}]>'
