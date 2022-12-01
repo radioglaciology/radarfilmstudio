@@ -8,12 +8,22 @@
         {{ bokeh_script|safe }}
         <nav class="level">
             <div class="level-item has-text-centered">
-                {{ map|safe }}
+                <div class="columns is-flex-grow-1">
+                    <div class="column is-11">
+                        {{ map|safe }}
+                    </div>
+                    <div class="column">
+                        {{ color_bar|safe }}
+                    </div>
+                </div>
             </div>
         </nav>
         <nav class="level">
             <div class="level-item has-text-centered">
                 {{ tile_select|safe }}
+            </div>
+            <div class="level-item has-text-centered" {% if not show_date_select %} style="display: none;"{% endif %}>
+                {{ date_select|safe }}
             </div>
         </nav>
     </div>

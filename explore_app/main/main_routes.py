@@ -16,6 +16,7 @@ from .stats_plots import update_flight_progress_stats
 from ..api.api_routes import has_write_permission, load_image, query_results_from_database
 from ..api.api_routes import query_cache, images_cache
 from ..api.image_processing import stitch_images
+from ..api.metadata_helper import worker_dummy_serve_metadata_dict
 
 from sqlalchemy import and_, or_
 from sqlalchemy.sql import func
@@ -45,7 +46,7 @@ flight_lines = {
 all_flights_maps = {}
 for dataset in flight_lines:
     all_flights_maps[dataset] = make_bokeh_map(800, 800, flight_lines=flight_lines[dataset], return_components=True, dataset=dataset)
-    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'tile_select']}
+    all_flights_maps[dataset] = {k:all_flights_maps[dataset][k] for k in all_flights_maps[dataset] if k in ['map', 'color_bar', 'tile_select', 'date_select']}
 
 flight_progress_stats_updated = None
 
@@ -84,40 +85,30 @@ def docs_contact_page():
 @main_bp.route('/map/<dataset>/')
 def map_page(dataset='antarctica'):
     script, divs = components(all_flights_maps[dataset])
+    
     return render_template("map.html",
-                            bokeh_script=script, map=divs['map'], tile_select=divs['tile_select'])
+                            bokeh_script=script, map=divs['map'], color_bar=divs['color_bar'],
+                            tile_select=divs['tile_select'],
+                            date_select=divs["date_select"], show_date_select=(dataset=='greenland'))
 
 @main_bp.route('/flight/<int:flight_id>/')
 @main_bp.route('/flight/<dataset>/<int:flight_id>/')
 @main_bp.route('/flight/<dataset>/<int:flight_id>/<int:flight_date>')
 def flight_page(flight_id, dataset='antarctica', flight_date=None):
-    # If only a year is given for the date, redirect to most common flight date
-    if (flight_date is not None) and (flight_date < 100):
-        print(f"Redirecting flight {flight_id} in year {flight_date} from dataset {dataset}")
-        q = db.session.query(FilmSegment.flight, FilmSegment.raw_date,
-                            func.count(FilmSegment.id)).filter(and_(FilmSegment.flight == flight_id,
-                            FilmSegment.dataset == dataset)).group_by(FilmSegment.flight, FilmSegment.raw_date)
-        df = pd.read_sql(q.statement, db.session.bind)
-        df['year'] = [(0 if x is None or np.isnan(x) else int(x)%100) for x in df['raw_date']]
-        df = df[df['year'] == flight_date]
-
-        if len(df) == 0:
-            print("No options - directing to general flight page")
-            return redirect(f'/flight/{dataset}/{flight_id}/')
-        else:
-            print(df)
-            idx = df['count_1'].argmax()
-            fdate = int(df.iloc[idx]['raw_date'])
-            print(df.iloc[idx])
-            print(f"Directing to specific date {fdate}")
-            if fdate < 100:
-                print(f"WARNING: Failed to find a valid most common raw date for dataset {dataset} and year {flight_date}")
-                fdate = ''
-            return redirect(f'/flight/{dataset}/{flight_id}/{fdate}')
-
     map_html, cbd_html, cbd_controls_html, map_controls_html = make_linked_flight_plots(db.session, current_user, flight_id,
                                                                     flight_lines=flight_lines[dataset], dataset=dataset,
                                                                     flight_date=flight_date)
+
+    # Check what years we have the correspond to this flight ID
+    fl = flight_lines[dataset]
+    year_urls = [url_for('main_bp.flight_page', flight_id=flight_id, dataset=dataset, flight_date=None)]
+    year_titles = ["(All years)"]
+    for fl_ident in fl.keys():
+        if fl_ident[0] == flight_id:
+            year_lasttwo = fl_ident[1]
+            if year_lasttwo is not None:
+                year_urls.append(url_for('main_bp.flight_page', flight_id=flight_id, dataset=dataset, flight_date=year_lasttwo))
+                year_titles.append(f"19{year_lasttwo}")
 
     # Check for a direct link to a specific segment to be loaded
     if 'id' in request.args:
@@ -127,7 +118,8 @@ def flight_page(flight_id, dataset='antarctica', flight_date=None):
 
     return render_template("flight.html", flight=flight_id, map=map_html, cbd_plot=cbd_html, cbd_controls=cbd_controls_html,
                             segment_id=segment_id, map_controls=map_controls_html,
-                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'])
+                           show_view_toggle=True, enable_tiff=app.config['ENABLE_TIFF'],
+                           links_to_years=list(zip(year_urls, year_titles)))
 
 @main_bp.route('/query/action', methods=["POST"])
 def query_bulk_action():
@@ -193,7 +185,13 @@ def query_bulk_action():
 
         job = queue.enqueue(stitch_images, failure_ttl=60, args=(img_paths, image_type, flip, scale_x, scale_y, qid))
         return f"started:{job.get_id()}"
-
+    elif action_type == 'download_metadata':
+        query = query.order_by(FilmSegment.first_cbd)
+        metadata_dict = {}
+        for idx, seg in enumerate(query.all()):
+            metadata_dict[idx] = seg.to_dict()
+        job = queue.enqueue(worker_dummy_serve_metadata_dict, failure_ttl=60, args=(metadata_dict, qid))
+        return f"started:{job.get_id()}"
     else:
         return "Unknown action type"
 
@@ -214,10 +212,15 @@ def get_output_image(job_id):
     job = Job.fetch(job_id, connection=conn)
 
     if job.is_finished:
-        img_io = job.result['image']
+        if job.result['job_type'] == 'stitch_images':
+            img_io = job.result['image']
 
-        return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
-                         as_attachment=True, attachment_filename=job.result['filename'])
+            return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
+                            as_attachment=True, attachment_filename=job.result['filename'])
+        elif job.result['job_type'] == 'metadata_to_dict':
+            return job.result['metadata']
+        else:
+            return f"Unknown job type {job.result['job_type']}", 202
     else:
         return "Job not complete", 202
 
@@ -359,7 +362,11 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    diff = time.time() - g.start
+    if hasattr(g, 'start'):
+        diff = time.time() - g.start
+    else:
+        diff = 0
+    
     if ((response.response) and
         (200 <= response.status_code < 300) and
         (response.content_type.startswith('text/html'))):

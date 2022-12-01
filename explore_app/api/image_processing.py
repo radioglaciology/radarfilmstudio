@@ -64,6 +64,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     print(f"Completed stitch in {time.time() - t_start} seconds")
 
     return {
+        'job_type': 'stitch_images',
         'filename': filename_out,
         'image_type': image_type,
         'image': img_io,

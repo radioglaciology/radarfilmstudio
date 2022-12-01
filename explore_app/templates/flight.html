@@ -19,8 +19,21 @@
         </div>
     </div>
 
+    {% if links_to_years|length > 1 %}
     <div class="container">
-        <h2 class="subtitle"><span id="segments-selected-count">0</span> Film Segments Selected</h2>
+        <span class="year-links is-size-7">Multiple flights with the same ID exist within this dataset: 
+        {% for link_url, link_text in links_to_years %}
+            <a href="{{link_url}}">{{link_text}}</a> 
+        {% endfor %}
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="container">
+        <nav class="level">
+            <div class="level-left"><h2 class="subtitle"><span id="segments-selected-count">0</span> Film Segments Selected</h2></div>
+            <div class="level-right"><span class="is-size-7"><a href="#actions">Jump to bulk actions</a></span></div>
+        </nav>
     </div>
 
     <div id="film-segments-list">

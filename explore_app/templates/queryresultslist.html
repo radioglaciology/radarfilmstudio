@@ -96,6 +96,19 @@
 <div class="container">
     <a name="actions"></a>
     {% if (current_user.is_authenticated and current_user.write_permission) %}
+        <h2 class="subtitle">Export data from this query...</h2>
+        <nav class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button class="button is-link" id="metadata-button">Download metadata</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
         <h2 class="subtitle">Process all results of this query...</h2>
         <div class="notification">
             Actions are applied to all <strong>{{ n_total_results }} film segments</strong> selected by
@@ -279,6 +292,43 @@
                 });
                 $("#bulk-action-modal").addClass("is-active");
             }
+
+            $("#metadata-button").click(function(event){
+                event.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: "/query/action",
+                    data: {'query_id': '{{ query_id }}', 'action_type': 'download_metadata', 'scope': 'query'},
+                    success: function(res) {
+                        if (res.startsWith('started')) {
+                            var job_id = res.substr(8);
+                            $("#bulk-action-modal-text").html("<i class='fas fa-spinner fa-spin'></i> Job started. Please wait.");
+                            $("#bulk-action-modal-btn").hide();
+
+                            function poll_job() {
+                                // Check on job status
+                                $.ajax({
+                                    type: "GET",
+                                    url: "/query/status/"+job_id,
+                                    success: function(res) {
+                                        if (res === 'done') {
+                                            var result_url = "/outputs/"+job_id;
+                                            $("#bulk-action-modal-text").html("<i class='fas fa-check'></i> <a href='"+result_url+"' target='_blank'>Click here to download result.</a>");
+                                            $("#bulk-action-modal-btn-close").show();
+                                        } else {
+                                            setTimeout(poll_job, 1000);
+                                        }
+                                    }
+                                });
+                            }
+                            poll_job();
+                        } else {
+                            $("#bulk-action-modal-text").html("Got an error. Please copy this error and tell Thomas to fix it.<br /><pre>"+res+"</pre>");
+                        }
+                    }
+                });
+                $("#bulk-action-modal").addClass("is-active");
+            });
 
             $("#stitch-button").click(function(event){
                 event.preventDefault();

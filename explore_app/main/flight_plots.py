@@ -19,14 +19,20 @@ from explore_app.main.map import make_bokeh_map
 
 from flask import current_app as app
 
+from sqlalchemy.dialects import postgresql
+
 
 def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=False, pageref=0, dataset='antarctica', flight_date=None):
+    app.logger.debug(f"[make_cbd_plot] flight_id: {flight_id}, flight_date: {flight_date}")
     if flight_date is None:
         df = pd.read_sql(FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
             .filter(FilmSegment.flight == flight_id).statement, session.bind)
     else:
-        df = pd.read_sql(FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
-            .filter(and_(FilmSegment.flight == flight_id, FilmSegment.raw_date == flight_date)).statement, session.bind)
+        #app.logger.debug(f"[make_cbd_plot] flight_id: {flight_id}, flight_date: {flight_date}")
+        statement = FilmSegment.query_visible_to_user(current_user, session=session).filter(FilmSegment.dataset == dataset) \
+            .filter(and_(FilmSegment.flight == flight_id, FilmSegment.raw_date % 100 == flight_date)).statement
+        df = pd.read_sql(statement, session.bind)
+        #app.logger.debug(str(statement.compile(dialect=postgresql.dialect())))
 
     # Add colormaps to plot
     unique_reels = df['reel'].unique()

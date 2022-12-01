@@ -12,6 +12,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_continuum import Continuum
 from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
+from flask_talisman import Talisman
 
 from rq import Queue
 from rq.job import Job
@@ -30,6 +31,7 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 scheduler = APScheduler()
 queue = Queue(connection=conn)
+talisman = Talisman()
 
 
 def create_app():
@@ -57,6 +59,8 @@ def create_app():
     csrf.init_app(app)
     scheduler.init_app(app)
     scheduler.start()
+
+    talisman.init_app(app, content_security_policy=[])
 
     with app.app_context():
         from explore_app.main import main_routes

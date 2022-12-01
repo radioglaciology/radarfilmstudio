@@ -22,6 +22,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     FLASK_APP = os.environ.get('FLASK_APP')
     SESSION_COOKIE_NAME = 'rg_explore_sess'
+    INVITE_CODE = os.environ.get('INVITE_CODE')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
@@ -47,6 +48,8 @@ class Config:
     ANTARCTICA_FILM_IMAGES_DIR = os.environ.get('ANTARCTICA_FILM_IMAGES_DIR')
     ANTARCTICA_FILM_IMAGES_TIFF_DIR = os.environ.get('ANTARCTICA_FILM_IMAGES_TIFF_DIR')
     GREENLAND_FILM_IMAGES_DIR = os.environ.get('GREENLAND_FILM_IMAGES_DIR')
+    GREENLAND_FILM_IMAGES_TIFF_DIR_1 = os.environ.get('GREENLAND_FILM_IMAGES_TIFF_DIR_1')
+    GREENLAND_FILM_IMAGES_TIFF_DIR_2 = os.environ.get('GREENLAND_FILM_IMAGES_TIFF_DIR_2')
     TMP_OUTPUTS_DIR = os.environ.get('TMP_OUTPUTS_DIR')
     ENABLE_TIFF = os.environ.get('ENABLE_TIFF')
 
