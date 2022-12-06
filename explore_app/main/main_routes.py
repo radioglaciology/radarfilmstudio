@@ -216,7 +216,7 @@ def get_output_image(job_id):
             img_io = job.result['image']
 
             return send_file(img_io, mimetype=f'image/{job.result["image_type"]}',
-                            as_attachment=True, attachment_filename=job.result['filename'])
+                            as_attachment=True, download_name=job.result['filename'])
         elif job.result['job_type'] == 'metadata_to_dict':
             return job.result['metadata']
         else:

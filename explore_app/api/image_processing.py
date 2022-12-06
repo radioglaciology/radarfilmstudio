@@ -22,12 +22,14 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     t_start = time.time()
 
     if image_type == 'jpg' or image_type == 'JPG':
-        image_type = 'JPEG'
+        image_output_type = 'PNG'
+    else:
+        image_output_type = 'TIFF'
 
     images = []
     sum_x = 0
     for img_path in img_paths:
-        if image_type == 'JPEG':
+        if image_output_type == 'PNG':
             filename_out = f"stitch-{qid}.png"
         else:  # otherwise assume TIFF
             filename_out = f"stitch-{qid}.tiff"
@@ -36,7 +38,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
         if flip == 'x':
             im = ImageOps.mirror(im)
 
-        if image_type == 'JPEG':
+        if image_output_type == 'PNG':
             im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)))
         else:
             im = im.resize((round(im.size[0] * scale_x), round(im.size[1] * scale_y)), resample=Image.NEAREST)
@@ -52,12 +54,13 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     for im in images:
         im_output.paste(im.crop((int(overlap_px / 2), 0, im.width, im.height)), (x + int(overlap_px / 2), 0))
         x += im.width - overlap_px
+        im.close()
 
     if flip == 'x':
         im_output = ImageOps.mirror(im_output)
     
     img_io = BytesIO()
-    im_output.save(img_io, image_type)
+    im_output.save(img_io, image_output_type)
     img_io.seek(0)
 
 
@@ -66,7 +69,7 @@ def stitch_images(img_paths, image_type, flip, scale_x, scale_y, qid):
     return {
         'job_type': 'stitch_images',
         'filename': filename_out,
-        'image_type': image_type,
+        'image_type': image_output_type,
         'image': img_io,
         'timestamp': time.time()
     }

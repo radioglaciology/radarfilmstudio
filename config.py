@@ -25,7 +25,7 @@ class Config:
     INVITE_CODE = os.environ.get('INVITE_CODE')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
     CACHE_TYPE = 'null'
     CACHE_DEFAULT_TIMEOUT = 300

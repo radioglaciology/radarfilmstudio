@@ -1,6 +1,6 @@
 from flask import Flask
 
-import pybrake.flask
+import pybrake.middleware.flask
 import logging
 
 from flask_sqlalchemy import SQLAlchemy
@@ -38,7 +38,7 @@ def create_app():
     """ Initialize the explore application """
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object('config.Config')
-    app = pybrake.flask.init_app(app)
+    app = pybrake.middleware.flask.init_app(app)
 
     if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
         print("Detected gunicorn. Setting up logging...")
@@ -52,7 +52,7 @@ def create_app():
     # Initialize plugins
     db.init_app(app)
     migrate.init_app(app, db)
-    continuum.init_app(app)
+    continuum.init_app(app, db)
     ma.init_app(app)
     cache.init_app(app)
     login_manager.init_app(app)
