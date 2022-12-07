@@ -60,7 +60,7 @@ def create_app():
     scheduler.init_app(app)
     scheduler.start()
 
-    talisman.init_app(app, content_security_policy=[])
+    talisman.init_app(app, content_security_policy=[], force_https=app.config['FORCE_HTTPS'])
 
     with app.app_context():
         from explore_app.main import main_routes

@@ -61,3 +61,6 @@ class Config:
         project_id=os.environ.get('PYBRAKE_PROJECT_ID', None),
         project_key=os.environ.get('PYBRAKE_KEY', "")
     )
+
+    # Talisman
+    FORCE_HTTPS = (True if os.environ.get('FORCE_HTTPS', "1") == "1" else False)

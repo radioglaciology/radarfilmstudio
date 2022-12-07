@@ -108,6 +108,7 @@ DATABASE_URL=postgresql+psycopg2://postgres:<local postgres password>@localhost:
 PYBRAKE_PROJECT_ID=
 PYBRAKE_KEY=
 PORT=7879
+FORCE_HTTPS=0
 ```
 
 You will need to replace `<somerandomstringofcharactershere>` with some string of random characters. (For local testing, it really doesn't matter what you put here.) You will also need to replace `<local postgres password>` with the password you setup in the "Database setup" section. You may also need to change the username, database name, and or port here.
