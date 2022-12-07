@@ -12,7 +12,7 @@ from explore_app.film_segment import FilmSegment
 from explore_app.user import User
 
 
-#raise(Exception("Don't run this file unless you're re-creating the database or adding a new set of data."))
+raise(Exception("Don't run this file unless you're re-creating the database or adding a new set of data."))
 
 def add_from_csv(input_file_path, updated_by_name, dataset, update_mode=True):
 
