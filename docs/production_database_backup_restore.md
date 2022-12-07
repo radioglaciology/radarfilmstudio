@@ -19,4 +19,8 @@ Pulling the production database to a local database can be done this way:
 
 Pushing a local database to production works like this: **(DANGER! This will overwrite the production database. You should not do this unless you're manually restoring a backup.)**
 
-`heroku pg:push postgresql://postgres:<postgres password>@localhost:5432/<local db> DATABASE_URL --app spri-explore`
+(You should set maintenace mode before proceeding.)
+
+First, delete the current online database: `heroku pg:reset --app spri-explore`
+
+Then push your local version to production: `heroku pg:push postgresql://postgres:<postgres password>@localhost:5432/<local db> DATABASE_URL --app spri-explore`

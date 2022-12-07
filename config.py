@@ -25,7 +25,7 @@ class Config:
     INVITE_CODE = os.environ.get('INVITE_CODE')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
 
     CACHE_TYPE = 'null'
     CACHE_DEFAULT_TIMEOUT = 300
@@ -61,3 +61,6 @@ class Config:
         project_id=os.environ.get('PYBRAKE_PROJECT_ID', None),
         project_key=os.environ.get('PYBRAKE_KEY', "")
     )
+
+    # Talisman
+    FORCE_HTTPS = (True if os.environ.get('FORCE_HTTPS', "1") == "1" else False)
