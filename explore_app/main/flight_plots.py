@@ -42,7 +42,7 @@ def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=F
     df['Color by Reel'] = df['reel'].apply(lambda x: mcolors.to_hex(reel_cm.colors[reel_map[x]]))
     df['Color by Verified'] = df['is_verified'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
     df['Color by Review'] = df['needs_review'].apply(lambda x: app.config['COLOR_ACCENT'] if x else app.config['COLOR_GRAY'])
-    df['Color by Frequency'] = df['instrument_type'].apply(lambda x: app.config['COLOR_REDWOOD'] if x == FilmSegment.RADAR_60MHZ else (app.config['COLOR_PALO_ALOT'] if x == FilmSegment.RADAR_300MHZ else app.config['COLOR_GRAY']))
+    df['Color by Frequency'] = df['instrument_type'].apply(lambda x: app.config['COLOR_REDWOOD'] if x == FilmSegment.RADAR_60MHZ else (app.config['COLOR_PALO_ALTO'] if x == FilmSegment.RADAR_300MHZ else app.config['COLOR_GRAY']))
 
     #
 
