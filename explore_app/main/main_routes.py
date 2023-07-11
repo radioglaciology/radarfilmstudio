@@ -58,10 +58,8 @@ def make_contributors_df():
 
 contributors_df = make_contributors_df()
 
-@main_bp.before_app_first_request
-def before_app_first_request():
+with app.app_context():
     update_flight_progress_stats(db.session)
-    global flight_progress_stats_updated
     flight_progress_stats_updated = time.time()
 
 
