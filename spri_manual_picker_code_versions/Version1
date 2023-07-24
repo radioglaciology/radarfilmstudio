@@ -1,0 +1,124 @@
+import cv2
+import numpy as np
+from cv2 import LINE_4
+from cv2 import RETR_CCOMP
+from cv2 import imshow
+
+
+# METADATA: image info
+DEBUG = False # global debuging tools "switch"
+
+imgPath = "C:/Users/LENOVO/Desktop/uni/summer 2022/EAS Research/code/BedPickerTest/flight_141_30_0006351_0006375-reel_begin_end_TIFF.tiff"
+img = cv2.imread(imgPath)                                   # cv2 reads the file
+img = img[460:1780, ]                                       # crops the image so only the section we care about is interpreted
+
+key = cv2.waitKey(1)
+
+
+
+# CALLBACK FUNCTIONS ================
+# Blur slider on "output" window:
+# -Blurred images is recalculated 
+# -Canny eDetection is recalculated
+def on_changeBLUR(blurStrength):
+    global img_blur 
+    img_blur = cv2.GaussianBlur(img, (blurStrength,blurStrength), 0) #blur recalculation
+
+    on_changeTHRESHOLD(threshold) #recalculates the edge with the saved threshold value
+    cv2.imshow("output", img_blur)
+
+
+# Threshold slider on "canny" window:
+# -Canny edge detection is recalculated with the provided threshold
+threshold = 0 #saves the threshold for when blur is modified
+def on_changeTHRESHOLD(cannyThreshold):
+    global threshold 
+    threshold = cannyThreshold #the slider value is saved
+    edges = cv2.Canny(image=img_blur, threshold1=cannyThreshold, threshold2=cannyThreshold) # CannyEdge recalculation
+    edgesCopy = edges.copy()
+
+    DEBUG * print(cannyThreshold) #shows the current value of the slider in console for debuging
+    cv2.putText(edgesCopy, str(cannyThreshold), (0, edgesCopy.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (50, 50, 50), 4) #shows the current value of the slider on the image for debuging
+    cv2.imshow('canny', edges)
+
+
+
+# Creates a rectangle/polygon when the mouse is click in the "output" window
+# (thanks to https://stackoverflow.com/questions/37099262/drawing-filled-polygon-using-mouse-events-in-open-cv-using-python)
+mousetCurrentPosition = (0,0) # saves the current position of the mouse
+polyPoints = [] # array of the points for our polygon
+drawDone = False 
+colour = (0, 0, 255) #BGR colour of poly
+def on_mouse(event, x, y, buttons, param):
+    global mousetCurrentPosition, polyPoints, drawDone, colour
+    if drawDone:
+        return
+
+    if event == cv2.EVENT_MOUSEMOVE: #save the new location of the mouse if it has moved
+        global mousetCurrentPosition #defines mousetCurrentPosition on global scope
+        mousetCurrentPosition = (x, y)
+        # if DEBUG: print("Current mouse position: " + str(mousetCurrentPosition)) # mouse location on "output" window to console 
+        
+
+
+    elif event == cv2.EVENT_LBUTTONDOWN: # if left-mouse clicked -> create poly-point
+        if DEBUG: print("Adding point #%d with position(%d,%d)" % (len(polyPoints), x, y)) # poly-point info to console 
+        polyPoints.append((x, y))
+        print(polyPoints)
+        overlay = 0 
+
+        cv2.fillPoly(img_blur, np.array([polyPoints]), colour)
+        cv2.imshow("output", img_blur)
+
+    elif event == cv2.EVENT_RBUTTONDBLCLK: # if right-mouse clicked -> terminate drawing and fill polygon
+        drawDone = True
+
+
+
+# DISPLAY =============================
+# Display original image
+img_blur = cv2.GaussianBlur(img, (1,1), 0)                      # intial blur recalculation
+cv2.namedWindow("output", cv2.WINDOW_NORMAL)                    # Create window with freedom of dimensions
+imS = cv2.resize(img, (1000, 1000))                             # Resize image
+cv2.imshow("output", imS)                                       # Show image
+# cv2.waitKey(0)                                                  # Display the image infinitely until any keypress
+# cv2.destroyWindow("output")
+cv2.createTrackbar('Blur', "output", 0, 50, on_changeBLUR) #Creates the blur trackbar
+
+#debug poly
+if DEBUG:
+    polyPoints = [(10, 10), (1000, 10), (1000, 1000)]
+    cv2.fillPoly(img_blur, np.array([polyPoints]), colour)
+    cv2.imshow("output", img_blur)
+
+
+# Display edge image
+edges = cv2.Canny(image=img_blur, threshold1=0, threshold2=0)   # CannyEdge recalculation
+cv2.namedWindow("canny", cv2.WINDOW_NORMAL)                     # Create window with freedom of dimensions
+imS = cv2.resize(edges, (1000, 1000))                           # Resize image
+cv2.imshow("canny", imS)                                        # Show image
+# cv2.waitKey(0)                                                  # Display the image infinitely until any keypress
+# cv2.destroyWindow("canny")
+cv2.createTrackbar('Threshold', "canny", 0, 100, on_changeTHRESHOLD) #Creates the threshold trackbar
+
+
+
+# MOUSE CONTROL ASSIGNMENTS
+cv2.setMouseCallback("output", on_mouse) #calls "createRect" when the mouse is clicked on the canny window
+
+
+
+
+while True:
+    k = cv2.waitKey(0) & 0xFF 
+    print(k)
+    if k == 27: # close all windows when ESC is pressed
+        cv2.destroyAllWindows()
+        break
+    if k == 26: # if ctrl+Z pressed, the latest point from poly points is removed
+        polyPoints.pop()
+        print("popped")
+        print(polyPoints)
+        cv2.fillPoly(img_blur, np.array([polyPoints]), colour)
+        cv2.imshow("output", img_blur)
+        colour = (200, 200, 200)
