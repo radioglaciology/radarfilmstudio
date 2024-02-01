@@ -46,10 +46,12 @@ You should run a local postgres database for testing.
 To install:
 
 ```
-sudo apt install postgresql-12 postgresql-contrib-12
+sudo apt install postgresql-14 postgresql-contrib-14
 ```
 
-On newer versions of Ubuntu, PostgreSQL 12 may not still be available. As of writing, however, it's still supported and you can get it from the [official PostgreSQL repositories](https://www.postgresql.org/download/linux/ubuntu/). To check what versions you have running, you can use this command: `pg_lsclusters`
+It's best to match your local major version of Postgresql to what's running on the server. Check in the Heroku add-on settings and update 14 to a newer version as necessary.
+
+If you version you need is not still available in the default repository, it's likely still supported and available from the [official PostgreSQL repositories](https://www.postgresql.org/download/linux/ubuntu/). To check what versions you have running, you can use this command: `pg_lsclusters`
 
 
 It's also handy to have a tool to explore your local database setup. I like Adminer:
@@ -65,7 +67,7 @@ To login to the psql shell: `sudo -u postgres psql`
 To change the password for a user: `ALTER USER postgres PASSWORD 'newpasswordhere';` (The semicolon is important!)
 To quit the shell: `\q`
 
-Then you'll need to edit your `pg_hba.conf` file (which you'll find in `/etc/postgresql/12/main`, possibly with a different verison instead of 12, though note that the current production server runs PostgreSQL 12 and so, for compatibility with pulling backups, it's recommended you stick with 12 for now).
+Then you'll need to edit your `pg_hba.conf` file (which you'll find in `/etc/postgresql/14/main`, possibly with a different verison instead of 14, though note that the current production server runs PostgreSQL 14 and so, for compatibility with pulling backups, it's recommended you stick with 14 for now).
 
 Find this line:
 
@@ -73,14 +75,15 @@ Find this line:
 
 and change `peer` to `md5`.
 
+After making this change, you must restart Postgresql:
+
+```
+sudo systemctl restart postgresql
+```
+
 Now you can test if you're able to login by going to `localhost/adminer`.
 
 If that worked, you may want to pull the production database down so you can test on a local snapshot of it. See the "Pulling the production database to your local dev environment" section of the [production database docs](production_database_backup_restore.md) page.
-
-#### Other local postgresql help
-
-Access psql prompt: `sudo -i -u postgres`
-May need to change in `pg_hba.conf`: `peer` to `md5` for user `postgres`
 
 ### Redis
 
@@ -165,6 +168,8 @@ You should now be able to open http://localhost:7879/ and see the app in your
 browser. (Or replace `7879` with whatever port you defined in your `.env` file.)
 
 ## Deploying to Heroku
+
+You'll need to install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
 
 See https://devcenter.heroku.com/articles/container-registry-and-runtime for reference.
 

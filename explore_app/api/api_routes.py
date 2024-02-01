@@ -14,12 +14,19 @@ from sqlalchemy_continuum.utils import count_versions
 from flask import current_app as app
 from .. import db, ma, continuum, scheduler
 
+from ..main.map import load_flight_lines
+
 from explore_app.film_segment import FilmSegment
 
 api_bp = Blueprint('api_bp', __name__,
                    template_folder='templates',
                    static_folder='static')
 seg_api = Api(api_bp)
+
+flight_lines = {
+    'antarctica': load_flight_lines(app.config['ANTARCTICA_FLIGHT_POSITIONING_DIR'], 'antarctica'),
+    'greenland': load_flight_lines(app.config['GREENLAND_FLIGHT_POSITIONING_DIR'], 'greenland')
+}
 
 query_cache = {}
 images_cache = {}
@@ -152,6 +159,24 @@ def film_segment_history(id):
 
     return {'history': history}
 
+# Positioning data
+
+# @api_bp.route('/api/positioning/<dataset>/<int:flight_id>', methods=['GET'])
+# @api_bp.route('/api/positioning/<dataset>/<int:flight_id>/<int:flight_date>', methods=['GET'])
+# def positioning_data(dataset, flight_id, flight_date=None):
+#     if not (dataset in flight_lines):
+#         return "Unknown dataset"
+    
+#     first_cbd = request.args.get("first_cbd", default=None)
+#     last_cbd = request.args.get("last_cbd", default=None)
+
+#     if flight_date is None:
+#         flight_ident = (flight_id, None)
+#     else:
+#         flight_ident = (flight_id, flight_date % 100)
+
+#     if not (flight_ident in flight_lines[dataset]):
+#         return ""
 
 # Image Loading
 

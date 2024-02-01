@@ -91,10 +91,11 @@ path_prefix = None
 #filename = "manual_import_data/20221205_nanna_fl10_1974.csv"
 #filename = "manual_import_data/20221206_1974fl5_filled.csv"
 #filename, allow_add, scope_type, path_prefix = "manual_import_data/20221206_1974fl6_filled.csv", True, "z", "DTU001/TIFF (2400x1800)/"
-filename, allow_add, scope_type, path_prefix = "manual_import_data/20221207_1974fl11_filled.csv", True, "z", "DTU001/TIFF (2400x1800)/"
+#filename, allow_add, scope_type, path_prefix = "manual_import_data/20221207_1974fl11_filled.csv", True, "z", "DTU001/TIFF (2400x1800)/"
+#filename, allow_add, scope_type, path_prefix = "manual_import_data/20221208_1974fl8_filled.csv", True, "z", "DTU001/TIFF (2400x1800)/"
 
 
-df = pd.read_csv(filename, na_values=["-9999"], header=0, sep=",", engine="python")
+df = pd.read_csv(filename, na_values=["-9999"], header=0, sep=None, engine="python")
 df = df.rename(columns={
     'year': 'raw_date',
     'flightline': 'flight',
