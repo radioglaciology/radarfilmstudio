@@ -78,11 +78,10 @@ def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=F
                 indices.push(true);
             }
         }
-        console.log(indices);
+        
         return indices;
     ''')
     filter_scope = CustomJSFilter(args=dict(tog_a=toggle_a, tog_z=toggle_z), code='''
-        console.log('filter_scope');
         var indices = [];
         for (var i = 0; i < source.get_length(); i++){
             if (tog_a.active && (source.data['scope_type'][i] == 'a')){
@@ -93,7 +92,6 @@ def make_cbd_plot(session, current_user, flight_id, width, height, return_plot=F
                 indices.push(false);
             }
         }
-        console.log(indices);
         return indices;
     ''')
     view = CDSView(source=source, filters=[filter_verified, filter_junk, filter_scope])
@@ -207,12 +205,12 @@ def make_linked_flight_plots(session, current_user, flight_id, flight_lines=None
                 highlight_source.change.emit();
             """))
 
-        map_data_sources[0].selected.js_on_change('line_indices', CustomJS(args={'cbd_source': cbd_source, 'map_source': map_data_sources[0]}, code="""
-            if (cb_obj.line_indices.length > 0) {
+        map_data_sources[0].selected.js_on_change('indices', CustomJS(args={'cbd_source': cbd_source, 'map_source': map_data_sources[0]}, code="""
+            if (cb_obj.indices.length > 0) {
                 cbd_source.selected.indices = [];
 
-                for (var j=0; j < cb_obj.line_indices.length; j++) {
-                    var cbd = map_source.data['CBD'][cb_obj.line_indices[j]];
+                for (var j=0; j < cb_obj.indices.length; j++) {
+                    var cbd = map_source.data['CBD'][cb_obj.indices[j]];
 
                     for (var i=0; i < cbd_source.data['first_cbd'].length; i++) {
                         var first_cbd = cbd_source.data['first_cbd'][i];
