@@ -12,7 +12,7 @@ from flask_login import current_user
 from sqlalchemy_continuum.utils import count_versions
 
 from flask import current_app as app
-from .. import db, ma, continuum, scheduler
+from .. import db, ma, scheduler
 
 from ..main.map import load_flight_lines
 

@@ -3,13 +3,19 @@ import os
 from flask import current_app as app
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_continuum import VersioningMixin
+
+from sqlalchemy_continuum.plugins import FlaskPlugin
+from sqlalchemy_continuum import make_versioned
 
 from . import db
 
 from explore_app.user import User
 
-class FilmSegment(db.Model, VersioningMixin):
+make_versioned(plugins=[FlaskPlugin()])
+
+class FilmSegment(db.Model):
+    __versioned__ = {}
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
     dataset = db.Column(db.String(100))
@@ -58,10 +64,7 @@ class FilmSegment(db.Model, VersioningMixin):
         else:
             q = FilmSegment.query
         
-        if user.is_authenticated and user.view_greenland:
-            return q
-        else:
-            return q.filter(FilmSegment.dataset == 'antarctica')
+        return q
 
     def get_path(self, format='jpg'):
         """
@@ -72,14 +75,10 @@ class FilmSegment(db.Model, VersioningMixin):
             if format == 'jpg':
                 p = f"{app.config['GREENLAND_FILM_IMAGES_DIR']}{self.path}"
             elif format == 'tiff':
-                # Due to the scanning occurring in two parts, the dataset is broken into two
-                # chunks.
-                if self.path.startswith("DTU"):
-                    p = f"{app.config['GREENLAND_FILM_IMAGES_TIFF_DIR_2']}{self.path}"
-                else:
-                    p = f"{app.config['GREENLAND_FILM_IMAGES_TIFF_DIR_1']}{self.path}"
+                p = f"{app.config['GREENLAND_FILM_IMAGES_TIFF_DIR']}{self.path}"
             else:
                 return None
+            print(p)
         else:
             if format == 'jpg':
                 p = f"{app.config['ANTARCTICA_FILM_IMAGES_DIR']}{self.path}"

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, url_for, g, redirect, request, sen
 from rq.job import Job
 
 from flask import current_app as app
-from .. import db, cache, scheduler, queue
+from .. import db, scheduler, queue
 from worker import conn
 
 from flask_login import current_user
@@ -51,7 +51,7 @@ for dataset in flight_lines:
 flight_progress_stats_updated = None
 
 def make_contributors_df():
-    contributors_df = pd.read_csv('contributors.csv', sep=' - ', comment='#')
+    contributors_df = pd.read_csv('contributors.csv', sep=' - ', comment='#', engine='python')
     contributors_df['last_name'] = [n.split(' ')[-1] for n in contributors_df['name']]
     contributors_df.sort_values(['order', 'last_name'], inplace=True)
     return contributors_df
@@ -309,12 +309,7 @@ def stats_page():
     total_verified = FilmSegment.query_visible_to_user(current_user).filter(FilmSegment.is_verified == True).count()
     total = FilmSegment.query_visible_to_user(current_user).count()
 
-    if current_user.is_authenticated:
-        include_greenland = current_user.view_greenland
-    else:
-        include_greenland = False
-
-    flightprogress_html = make_flight_progress_bar_plot(include_greenland=include_greenland)
+    flightprogress_html = make_flight_progress_bar_plot(include_greenland=True)
 
     elapsed_time = time.time() - flight_progress_stats_updated
     if elapsed_time < 5:

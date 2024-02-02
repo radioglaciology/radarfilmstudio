@@ -6,10 +6,8 @@ import logging
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_restful import Api
-from flask_caching import Cache
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from flask_continuum import Continuum
 from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
 from flask_talisman import Talisman
@@ -23,10 +21,8 @@ import os
 # Globally accessible plugins
 db = SQLAlchemy()
 migrate = Migrate(compare_type=True)
-continuum = Continuum(db=db, migrate=migrate)
 ma = Marshmallow()
 seg_api = Api()
-cache = Cache()
 login_manager = LoginManager()
 csrf = CSRFProtect()
 scheduler = APScheduler()
@@ -52,9 +48,7 @@ def create_app():
     # Initialize plugins
     db.init_app(app)
     migrate.init_app(app, db)
-    continuum.init_app(app, db)
     ma.init_app(app)
-    cache.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
     scheduler.init_app(app)
