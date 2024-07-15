@@ -16,7 +16,7 @@ COPY ./ /opt/spri_explore/
 WORKDIR /opt/spri_explore
 
 RUN echo "source activate film" > ~/.bashrc
-ENV PATH /opt/conda/envs/film/bin:$PATH
-ENV CONDA_DEFAULT_ENV film
+ENV PATH=/opt/conda/envs/film/bin:$PATH
+ENV CONDA_DEFAULT_ENV=film
 
 CMD gunicorn --bind 0.0.0.0:$PORT --log-level=debug --preload wsgi:app
