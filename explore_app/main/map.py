@@ -175,13 +175,16 @@ def make_bokeh_map(width, height, flight_id=None, dataset='antarctica', title=""
     else:
         raise(Exception(f"Unexpected dataset {dataset} - should be antarctica or greenland"))
 
+    tooltips = [
+        ('Track', '@{Track}'),
+        ('CBD', '@CBD'),
+    ]
+    if dataset == 'greenland':
+        tooltips.append(('Year', '19@{Date}'))
+
     p.add_tools(HoverTool(
         renderers=list(flight_glyphs.values()),
-        tooltips=[
-            ('Track', '@{Track}'),
-            ('CBD', '@CBD'),
-            ('Thickness', '@{Thickness}')
-        ]
+        tooltips=tooltips
     ))
 
 
