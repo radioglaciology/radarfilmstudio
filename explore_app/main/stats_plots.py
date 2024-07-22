@@ -28,9 +28,9 @@ def update_flight_progress_stats(session):
 
 def update_flight_progress_stats_dataset(session, dataset, flight_name_prefix, separate_by_date=False):
     if separate_by_date:
-        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight, FilmSegment.raw_date).distinct().all()
+        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).filter(FilmSegment.scope_type != FilmSegment.ESM_SCOPE).with_entities(FilmSegment.flight, FilmSegment.raw_date).distinct().all()
     else:
-        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).with_entities(FilmSegment.flight).distinct().all()
+        distinct_flights = FilmSegment.query.filter(FilmSegment.dataset == dataset).filter(FilmSegment.is_junk == False).filter(FilmSegment.scope_type != FilmSegment.ESM_SCOPE).with_entities(FilmSegment.flight).distinct().all()
         distinct_flights = [(x[0], None) for x in distinct_flights]
 
     verified_list = []
@@ -50,7 +50,7 @@ def update_flight_progress_stats_dataset(session, dataset, flight_name_prefix, s
         if date is None:
             return f"/flight/{dataset}/{id}"
         else:
-            return f"/flight/{dataset}/{id}/{date}"
+            return f"/flight/{dataset}/{id}/{date%100}"
 
     flight_progress_stats[dataset]['flight_ids'] = [x[0] for x in distinct_flights]
     flight_progress_stats[dataset]['flight_dates'] = [x[1] for x in distinct_flights]
@@ -71,7 +71,7 @@ def make_flight_progress_bar_plot(include_greenland=False):
     else:
         stats = flight_progress_stats['antarctica']
 
-    fps_df = pd.DataFrame(stats).sort_values(by=['dataset', 'flight_ids'], ascending=False)
+    fps_df = pd.DataFrame(stats).sort_values(by=['dataset', 'flight_dates', 'flight_ids'], ascending=False)
 
     p = figure(y_range=fps_df['flights'], plot_height=20*len(stats['flight_ids']),
                toolbar_location=None, tools="hover,tap", tooltips="@$name film segments")

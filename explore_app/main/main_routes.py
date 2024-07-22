@@ -327,16 +327,16 @@ def stats_page():
 
 # Periodic background updating
 
-@scheduler.task('interval', id='update_stats', seconds=(60*30))
+@scheduler.task('interval', id='update_stats', seconds=(60*1))
 def update_stats():
-    with db.app.app_context():
+    with scheduler.app.app_context():
         update_flight_progress_stats(db.session)
         global flight_progress_stats_updated
         flight_progress_stats_updated = time.time()
 
-@scheduler.task('interval', id='clear_main_query_cache', seconds=(60*60))
+@scheduler.task('interval', id='clear_main_query_cache', seconds=(60*1))
 def clear_query_cache():
-    with db.app.app_context():
+    with scheduler.app.app_context():
         for k in list(query_cache):
             if time.time() - query_cache[k]['timestamp'] > (60*60):
                 query_cache.pop(k, None)

@@ -40,6 +40,7 @@ class FilmSegment(db.Model):
 
     Z_SCOPE = 'z'
     A_SCOPE = 'a'
+    ESM_SCOPE = 'esm'
     scope_type = db.Column(db.String(100))
 
     RADAR_60MHZ = 10

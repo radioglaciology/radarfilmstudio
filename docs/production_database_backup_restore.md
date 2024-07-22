@@ -5,7 +5,7 @@ To capture a backup on Heroku and then download it:
 `heroku pg:backups:capture --app spri-explore`
 `heroku pg:backups:download b004 --app spri-explore`
 
-(Repalce `b004` with whatever the id of the backup is.)
+(Replace `b004` with whatever the id of the backup is.)
 
 This creates a local file `latest.dump` with a backup of the production database.
 
@@ -13,7 +13,7 @@ This creates a local file `latest.dump` with a backup of the production database
 
 Pulling the production database to a local database can be done this way:
 
-`PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull HEROKU_POSTGRESQL_BRONZE <local db> --app spri-explore`
+`PGUSER=postgres PGPASSWORD=<postgres password> heroku pg:pull DATABASE_URL <local db> --app spri-explore`
 
 ## Pushing your local databse to production
 
